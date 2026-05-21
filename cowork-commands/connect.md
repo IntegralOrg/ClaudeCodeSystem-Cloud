@@ -1,3 +1,8 @@
+---
+name: connect
+description: Part 3 of 4 setup: connect your tools (calendar, email, task manager, etc.).
+---
+
 # Connect: Set Up Your Tool Connections
 
 This is Part 3 of 4 in the setup process. The user has already run `/onboard` (built their vault) and `/train` (learned how the system works). Now we connect their actual tools.

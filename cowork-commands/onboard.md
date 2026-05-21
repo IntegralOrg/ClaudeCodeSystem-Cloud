@@ -1,3 +1,8 @@
+---
+name: onboard
+description: Part 1 of 4 setup: permissions, user profiling, vault creation, and file customization.
+---
+
 # Onboard: Set Up Your Personal Assistant
 
 You are setting up the Claude Code Personal Assistant system for a new user. This is Part 1 of a 4-part setup process:
@@ -422,13 +427,8 @@ If `CLAUDE_RUNTIME` is Desktop only, skip CLI-specific settings files and note i
 
 ### 6E: Skills
 
-**The skill installation path depends on `CLAUDE_RUNTIME`:**
+Based on workflow preferences, create skills in `VAULT_PATH/.claude/commands/`:
 
-#### If CLI or Both: Auto-Install Skills
-
-Create skills in `VAULT_PATH/.claude/commands/`:
-
-Based on workflow preferences:
 - If they chose morning review -> `morning.md` based on `examples/commands/morning.md`
 - If they chose full EOD processing -> `eod.md` based on `examples/commands/eod.md` (customize sections to their tools; skip time tracking if they do not use a time tracker)
 - If they chose simple daily note -> `daily-note.md`
@@ -471,34 +471,6 @@ This installs an interactive brainstorming skill that helps users think through 
 If the install fails (e.g., Node.js is not available), note it as a task in `Inbox/[YourCompany].md` for later and continue. Do not block setup on this.
 
 If the user chose full EOD processing, the daily graph sync is already included as Phase 6 of `/eod`. The standalone `/graph-daily` is available for manual runs.
-
-#### If Desktop Only (CoWork): Manual Skill Upload
-
-Claude CoWork does not auto-discover `.claude/commands/` files. Skills must be uploaded manually by the user through the **Customize** section in the CoWork app settings. Each skill file needs YAML frontmatter to be recognized.
-
-**Still copy skills to `VAULT_PATH/.claude/commands/`** (the CLI versions serve as the source of truth and work if the user later adopts the CLI). But also walk the user through uploading their core skills to CoWork:
-
-1. Tell the user: "Skills in CoWork work a little differently than in the CLI. You need to upload each one through the app. I will walk you through it."
-
-2. Copy the CoWork-formatted skill files from `cowork-commands/` in this repo to `VAULT_PATH/cowork-commands/` so the user has them locally:
-   - Copy all `.md` files from `REPO_PATH/cowork-commands/` to `VAULT_PATH/cowork-commands/`
-
-3. Walk through uploading the essential skills first. Use AskUserQuestion at each step:
-   - "Open the CoWork app settings. Look for the **Customize** section."
-   - "Find the option to add a custom skill or instruction. Click it."
-   - "Upload the file from your vault at `cowork-commands/morning.md` (or paste its contents)."
-   - Confirm: "Does it show up as an available skill?"
-
-4. Prioritize these skills for initial upload (the user can add more later):
-   - `morning.md` -- daily driver
-   - `eod.md` -- daily driver
-   - `strategy.md` -- most useful on-demand skill
-   - `handoff.md` + `pickup.md` -- session continuity
-   - `train.md`, `connect.md`, `finish.md` -- needed to continue setup
-
-5. Note remaining skills as a task: "You have [N] more skills available in `cowork-commands/`. Upload them through **Customize** whenever you want to add more."
-
-6. Add a note in CLAUDE.md under Available Integrations or a new Skills section: "CoWork skills are uploaded through the **Customize** section. Source files with YAML frontmatter are in `cowork-commands/`. To add a new skill, upload the file from that folder."
 
 ### 6F: Knowledge Graph Setup
 

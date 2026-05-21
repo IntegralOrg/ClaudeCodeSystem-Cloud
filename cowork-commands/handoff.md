@@ -1,3 +1,8 @@
+---
+name: handoff
+description: Save current work state to a named file for a new session to resume later.
+---
+
 # Handoff
 
 Hand off the current conversation to a fresh Claude Code session (new window, post-clear, or after context compaction). Writes a self-contained briefing to `.claude/handoffs/<name>.md` that a new agent can read cold and continue the work without losing momentum.

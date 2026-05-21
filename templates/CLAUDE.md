@@ -162,7 +162,7 @@ Brain/
 
 (Built-in connections -- once set up, they just work. These are called "MCP servers" in technical documentation.)
 
-- If using **Claude Desktop** or **Claude CoWork**, set these up through the app's connector/integration UI. **Claude cannot configure these connections itself.** Only the user can add or remove direct connections through the app UI. If a new connection is needed, tell [Your Name] what to connect and where to find it in the UI.
+- If using **Claude Desktop** or **Claude CoWork**, set these up through the app's **Customize** section in settings. **Claude cannot configure these connections itself.** Only the user can add or remove direct connections through the **Customize** section. If a new connection is needed, tell [Your Name] what to connect and where to find it in the **Customize** section.
 - If using **Claude Code CLI**, set these up in Claude Code's local settings/config.
 - If using **both**, prefer the app UI for Desktop and only add CLI config for tools you need in terminal sessions.
 

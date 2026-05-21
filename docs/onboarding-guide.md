@@ -45,10 +45,10 @@ The setup works in two environments:
 - **Claude Code CLI** -- if you opened Terminal and ran `claude`
 - **Both** -- if you move between the app and terminal
 
-This matters because built-in connectors are configured differently:
-- **Desktop** -- use the app's connector/integration UI
+This matters because built-in integrations are configured differently:
+- **Desktop** -- use the app's **Customize** section in settings
 - **CLI** -- use Claude Code settings files
-- **Both** -- use the app UI for Desktop, and only add CLI config for tools you need in terminal sessions
+- **Both** -- use the **Customize** section for Desktop, and only add CLI config for tools you need in terminal sessions
 
 Claude asks this during `/onboard` and records it in your CLAUDE.md so later setup steps know which path to use.
 
@@ -107,7 +107,7 @@ Copy and paste this into the file:
 | `WebSearch` | Claude can search the web for current information |
 | `mcp__context7__*` | Claude can look up documentation |
 
-**Adding more tools:** This is mainly for CLI users. Each tool Claude connects to needs its own permission line. When you run `/connect`, Claude will add these automatically for the CLI path. The pattern is always `mcp__` followed by the tool name and `__*`. For example, if you connect ClickUp, Claude adds `"mcp__clickup__*"` to the allow list. If you connect Claude to Gmail or Google Calendar through Claude.ai, CLI users add lines like `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the allow list. Desktop users do not need to manage this manually for app UI connectors.
+**Adding more tools:** This is mainly for CLI users. Each tool Claude connects to needs its own permission line. When you run `/connect`, Claude will add these automatically for the CLI path. The pattern is always `mcp__` followed by the tool name and `__*`. For example, if you connect ClickUp, Claude adds `"mcp__clickup__*"` to the allow list. If you connect Claude to Gmail or Google Calendar through Claude.ai, CLI users add lines like `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the allow list. Desktop users do not need to manage this manually for integrations added through the **Customize** section.
 
 **Additional directories** are folders outside your notes folder that Claude can access. The defaults cover your Desktop, Downloads, temporary files, scheduled tasks, and scripts.
 
@@ -209,10 +209,10 @@ For Google services, `/connect` offers two paths:
 - **Easy way:** Sign in through Claude.ai's settings page (2 minutes, no technical setup)
 - **Full control way:** Use the `gws` CLI to set up Google access (recommended for custom Google Drive/Docs workflows). Cloud Console is the fallback if the CLI is unavailable.
 
-For other built-in connectors:
-- **Desktop users** connect them in the app UI
+For other built-in integrations:
+- **Desktop users** add them through the **Customize** section in settings
 - **CLI users** can use local Claude Code config where supported
-- **Both** can do both, but only if they need the connector in both places
+- **Both** can do both, but only if they need the integration in both places
 
 See [Integration Architecture](integration-architecture.md) for the full technical reference on how each tool connects, including credential types and API details.
 

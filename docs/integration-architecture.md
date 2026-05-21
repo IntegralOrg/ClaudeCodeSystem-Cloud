@@ -129,7 +129,7 @@ Some tools have a direct connection built for Claude. Think of them as built-in 
 ### How MCP Servers Work
 
 MCP-style direct connections are configured outside the vault. The exact path depends on how the user runs Claude:
-1. **Claude Desktop app or CoWork**: use the app's connector/integration UI. **Only the user can add these** -- Claude cannot configure its own MCP connections through Desktop/CoWork. If a new connection is needed, tell the user what to connect and where to find it in the app settings.
+1. **Claude Desktop app or CoWork**: use the app's **Customize** section in settings. **Only the user can add these** -- Claude cannot configure its own MCP connections through Desktop/CoWork. If a new integration is needed, tell the user what to connect and where to find it in the **Customize** section.
 2. **Claude Code CLI**: use Claude Code's local settings/config (`~/.claude/settings.json`)
 3. **Both**: use the app UI for Desktop, and only add CLI config for tools needed in terminal sessions
 
@@ -485,7 +485,7 @@ FATHOM_API_KEY=your_fathom_key
 
 There are two ways to connect Google services. Choose whichever works for you:
 
-- **Easy way (recommended): Claude.ai managed connections.** You sign in to Google through Claude.ai's Settings > Integrations page. No Cloud Console project needed. Claude gets direct access to Gmail and Google Calendar as built-in tools. If you also use the CLI, add `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the CLI allow list. Desktop users do not need a local config file for this connector path.
+- **Easy way (recommended): Claude.ai managed connections.** You sign in to Google through Claude.ai's Settings > Integrations page. No Cloud Console project needed. Claude gets direct access to Gmail and Google Calendar as built-in tools. If you also use the CLI, add `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the CLI allow list. Desktop users do not need a local config file for this path.
 
 - **Full-control way (recommended): `gws` CLI.** Use the `gws` CLI to create or reuse Google access for the system. It is the preferred custom path because it is faster and less error-prone than clicking through Cloud Console. If `gws` is unavailable, use the Cloud Console walkthrough below.
 
@@ -627,7 +627,7 @@ If you are a Workspace admin, you can also pre-approve the OAuth consent screen 
 
 ### Step 2: Configure Direct Connections
 
-Add direct connections for services you use outside the vault. **Desktop and CoWork users** do this through the app's connector/integration UI -- Claude cannot configure these connections itself, only the user can add them through the app settings. **CLI users** can configure MCP servers in Claude Code's local settings files. Your task manager and any database tools are common first choices. Each connection has its own setup process (usually an API key or OAuth flow). See the `/connect` skill for step-by-step guidance.
+Add direct connections for services you use outside the vault. **Desktop and CoWork users** do this through the app's **Customize** section -- Claude cannot configure these connections itself, only the user can add them through the **Customize** settings. **CLI users** can configure MCP servers in Claude Code's local settings files. Your task manager and any database tools are common first choices. Each connection has its own setup process (usually an API key or OAuth flow). See the `/connect` skill for step-by-step guidance.
 
 ### Step 3: Document Your Integrations
 

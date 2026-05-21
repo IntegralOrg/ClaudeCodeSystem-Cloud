@@ -1,3 +1,8 @@
+---
+name: build-skill
+description: Turn a successful task into a repeatable slash command workflow.
+---
+
 # Build Skill -- Turn a Successful Task Into a Repeatable Workflow
 
 Use this after completing a task that you want to be able to repeat. This skill interviews you about what just happened and creates a new slash command from it.

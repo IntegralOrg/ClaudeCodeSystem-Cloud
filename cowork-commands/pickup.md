@@ -1,3 +1,8 @@
+---
+name: pickup
+description: Resume from a previous handoff. Lists available handoffs, loads context, and reports where you left off.
+---
+
 # Pickup
 
 Pick up a handed-off conversation. Reads a handoff file from `.claude/handoffs/`, pulls the context it lists, and reports back where we left off so the user can keep moving without re-explaining anything.

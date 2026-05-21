@@ -2,7 +2,7 @@
 
 An AI-powered personal assistant built on [Obsidian](https://obsidian.md) + [Claude Code](https://docs.anthropic.com/en/docs/claude-code). The vault is the operating system; Claude Code is the brain. Together they handle task management, meeting processing, email triage, time tracking, client work, and daily planning -- replacing a human executive assistant.
 
-It can be used from either the Claude Desktop app or the Claude Code CLI. The setup now asks which one the user is using and changes the connector setup path accordingly.
+It can be used from either the Claude Desktop app or the Claude Code CLI. The setup now asks which one the user is using and changes the integration setup path accordingly.
 
 > **You do not need to be technical.** Claude will walk you through everything step by step.
 >
@@ -123,11 +123,13 @@ By the end of all 4 steps, you will have (see the [Onboarding Guide](docs/onboar
 ClaudeCodeSystem/
 ├── CLAUDE.md                           # Bootstrap file (tells Claude how to start setup)
 ├── README.md                           # This file
-├── .claude/commands/
+├── .claude/commands/                   # Claude Code CLI slash commands (auto-discovered)
 │   ├── onboard.md                      # Part 1: Permissions, interview, build vault
 │   ├── train.md                        # Part 2: Learn the system
 │   ├── connect.md                      # Part 3: Connect all your tools
 │   └── finish.md                       # Part 4: Live demo, improvement tips
+├── cowork-commands/                    # CoWork versions (YAML frontmatter, manual upload)
+│   └── *.md                            # Mirror of all commands with YAML frontmatter
 ├── docs/
 │   ├── onboarding-guide.md             # Reference for what /onboard sets up
 │   ├── vault-design-guide.md           # How to build the vault (folder structure, inbox, templates)
@@ -174,7 +176,11 @@ ClaudeCodeSystem/
 The instruction file at your vault root. Claude reads it automatically every session. It defines your folder structure, integrations, preferences, workflows, and routing rules. Think of it as Claude's operating manual. Keep it under 30K characters; move detailed content to reference files.
 
 ### Skills
-Successful tasks turned into repeatable routines. Each skill is a text file in `.claude/commands/` that defines a multi-step workflow. Type `/skill-name` and Claude runs the full process. Examples: `/eod-gather` (collect all daily data), `/morning` (interactive morning review), `/audit-deliver` (populate a client portal). Your skills library grows over time as you turn successful one-off tasks into reusable routines.
+Successful tasks turned into repeatable routines. Each skill is a text file that defines a multi-step workflow. Type `/skill-name` and Claude runs the full process. Examples: `/eod-gather` (collect all daily data), `/morning` (interactive morning review), `/audit-deliver` (populate a client portal). Your skills library grows over time as you turn successful one-off tasks into reusable routines.
+
+**Two formats exist for different runtimes:**
+- **Claude Code (CLI):** Skills live in `.claude/commands/` and are auto-discovered. No special formatting needed.
+- **Claude CoWork:** Skills require YAML frontmatter (`name:` and `description:` fields in a `---` block) and must be manually uploaded through the **Customize** section in the app settings. The `cowork-commands/` directory contains pre-formatted versions of all skills ready for upload.
 
 ### Tracking Lists (The Manifest Pattern)
 Long-running workflows track every extracted item in a tracking list (`/tmp/eod-manifest-TODAY.md`). Each item gets: description, client, type, source, destination, status. This makes sure nothing gets lost during long processes.
