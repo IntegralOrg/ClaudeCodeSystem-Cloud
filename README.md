@@ -127,7 +127,12 @@ ClaudeCodeSystem/
 │   ├── onboard.md                      # Part 1: Permissions, interview, build vault
 │   ├── train.md                        # Part 2: Learn the system
 │   ├── connect.md                      # Part 3: Connect all your tools
-│   └── finish.md                       # Part 4: Live demo, improvement tips
+│   ├── finish.md                       # Part 4: Live demo, improvement tips
+│   ├── handoff.md                      # Save current work state to a named briefing file
+│   ├── pickup.md                       # Resume from a named handoff in a fresh session
+│   ├── strategy.md / optimize.md       # Decision-making + tool/process improvement
+│   ├── build-skill.md / learn.md       # Turn tasks into skills · capture knowledge
+│   └── graph-sync.md / graph-daily.md  # Knowledge graph maintenance
 ├── cowork-commands/                    # CoWork versions (YAML frontmatter, manual upload)
 │   └── *.md                            # Mirror of all commands with YAML frontmatter
 ├── docs/
@@ -181,6 +186,16 @@ Successful tasks turned into repeatable routines. Each skill is a text file that
 **Two formats exist for different runtimes:**
 - **Claude Code (CLI):** Skills live in `.claude/commands/` and are auto-discovered. No special formatting needed.
 - **Claude CoWork:** Skills require YAML frontmatter (`name:` and `description:` fields in a `---` block) and must be manually uploaded through the **Customize** section in the app settings. The `cowork-commands/` directory contains pre-formatted versions of all skills ready for upload.
+
+### Session Continuity (`/handoff` and `/pickup`)
+Every user gets these two commands. They solve the single biggest limitation of working with an AI agent: a session's memory is finite. When the context window fills up, or you run `/clear`, close the window, or the conversation gets compacted, everything that was only "in the chat" is gone.
+
+- **`/handoff <name>`** writes a self-contained briefing to `.claude/handoffs/<name>.md`: the goal, what's been done, what was tried and rejected, the exact next steps, and which files and commands the next session should reload. Run it before `/clear`, before closing a window mid-task, or whenever a long conversation is getting unwieldy. The handoff is written *to the next Claude*, not to you, so it reads like a briefing for a colleague who just walked in.
+- **`/pickup [name]`** (in the next session) reads that file, reloads the listed context in parallel, sanity-checks it against the current state of the repo, and reports back where you left off, all without you re-explaining anything. With no argument it lists the available handoffs and asks which to resume.
+
+Because each handoff is a named, persistent file inside the vault, they accumulate into a **track record of in-flight workstreams**: you can keep several open across different projects, and old ones stay put until you delete them. This is better task and context management than holding everything in one long chat. Use it for mid-stream work; `/eod` still handles end-of-day wrap-up and routing items to your task inboxes.
+
+> Named `/pickup` (not `/resume`) so it doesn't shadow Claude Code's built-in `/resume` session picker.
 
 ### Tracking Lists (The Manifest Pattern)
 Long-running workflows track every extracted item in a tracking list (`/tmp/eod-manifest-TODAY.md`). Each item gets: description, client, type, source, destination, status. This makes sure nothing gets lost during long processes.

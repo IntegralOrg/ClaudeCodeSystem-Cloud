@@ -153,6 +153,6 @@ Do not dump the full file content into the chat. The user can read it if they wa
 
 - **When to run**: Before `/clear`, before closing a window mid-task, or when context is getting long and you want a checkpoint before compaction.
 - **Named and persistent**: Each handoff gets its own file in `.claude/handoffs/`. You can have many active handoffs across different workstreams. Old handoffs stick around until manually deleted.
-- **Not a replacement for EOD**: This is for mid-stream work handoffs, not end-of-day wrap-ups. EOD still routes items to client inboxes and updates ClickUp.
+- **Not a replacement for EOD**: This is for mid-stream work handoffs, not end-of-day wrap-ups. Your `/eod` still routes items to your task inboxes and builds tomorrow's plan.
 - **Not a replacement for tasks**: Ongoing project state belongs in your task manager or client inbox files. Handoff is for the immediate thread of work the current session is in the middle of.
 - **Cleanup**: Periodically review `.claude/handoffs/` and delete stale handoffs that are no longer relevant.

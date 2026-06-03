@@ -6,6 +6,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-06-03] - Handoff/Pickup Promoted to the Standard Command Set
+
+### Changed
+- **`/handoff` and `/pickup` moved from `examples/commands/` into the standard set `.claude/commands/`.** They are now core commands every user receives during setup (like `/onboard`, `/strategy`, `/learn`), not optional examples. One source of truth per command.
+- **`/pickup` updated to the latest functionality**: explicit "Step 0: Resolve Which Handoff to Read" (lists actual handoffs and asks rather than silently falling back), a legacy-note guard against stale root `handoff.md` orphans hijacking a resume, and split Read / Freshness-check steps.
+- **`onboard.md` Phase 6E**: handoff/pickup now install from `.claude/commands/` under an "Always copy these session-continuity skills (every user gets these)" block, with rationale on why they exist (context + task management, hand off / pick up conversations, persistent track record in the vault).
+- **`cowork-commands/handoff.md` and `pickup.md`** synced to the new bodies (YAML frontmatter preserved).
+- **README**: added a "Session Continuity (`/handoff` and `/pickup`)" key-concept section and listed both in the repository-structure tree under `.claude/commands/`.
+
+### Removed
+- `examples/commands/handoff.md` and `examples/commands/pickup.md` (moved to the standard set; no longer duplicated in examples).
+
+---
+
 ## [2026-04-28] - Brainstorming Skill + Local Handoff Files
 
 ### Added

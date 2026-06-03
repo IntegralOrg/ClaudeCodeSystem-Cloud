@@ -451,9 +451,13 @@ Customize skill content with their specific tools, clients, and schedule.
 - `graph-sync.md` (from this repo's `.claude/commands/graph-sync.md`) -- full vault knowledge graph rebuild
 - `graph-daily.md` (from this repo's `.claude/commands/graph-daily.md`) -- daily incremental graph sync
 
-**Copy all pre-built utility commands** from `examples/commands/` into `VAULT_PATH/.claude/commands/`. These are general-purpose commands every user should have available after setup completes:
-- `handoff.md` -- save current work state for a new session to resume
-- `pickup.md` -- resume from a previous handoff
+**Always copy these session-continuity skills** (every user gets these -- they are core, not optional):
+- `handoff.md` (from this repo's `.claude/commands/handoff.md`) -- save the current work state to a named briefing file so a fresh session can pick it up cold
+- `pickup.md` (from this repo's `.claude/commands/pickup.md`) -- resume from a named handoff: load the listed context and report where we left off
+
+These two are the backbone of context and task management. A single Claude session has a finite context window; once it fills up (or the user runs `/clear`, closes the window, or hits compaction), everything not written down is lost. `/handoff` checkpoints the live thread of work into `VAULT_PATH/.claude/handoffs/<name>.md` -- the goal, what's been done, what was tried and rejected, the exact next steps, and which files/commands to reload. `/pickup` reads that file in the next session and re-establishes shared context in seconds instead of the user re-explaining everything. Because each handoff is a named, persistent file in the vault, they also double as a track record of in-flight workstreams. **Install both for every user**, exactly like the setup and Integral skills above.
+
+**Copy these other pre-built utility commands** from `examples/commands/` into `VAULT_PATH/.claude/commands/`:
 - `monthly-review.md` -- periodic system health check and vault cleanup
 - `resume.md` -- session resume helper
 
