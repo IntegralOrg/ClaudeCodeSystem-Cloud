@@ -427,8 +427,13 @@ If `CLAUDE_RUNTIME` is Desktop only, skip CLI-specific settings files and note i
 
 ### 6E: Skills
 
-Based on workflow preferences, create skills in `VAULT_PATH/.claude/commands/`:
+**The skill installation path depends on `CLAUDE_RUNTIME`:**
 
+#### If CLI or Both: Auto-Install Skills
+
+Create skills in `VAULT_PATH/.claude/commands/`:
+
+Based on workflow preferences:
 - If they chose morning review -> `morning.md` based on `examples/commands/morning.md`
 - If they chose full EOD processing -> `eod.md` based on `examples/commands/eod.md` (customize sections to their tools; skip time tracking if they do not use a time tracker)
 - If they chose simple daily note -> `daily-note.md`
@@ -451,9 +456,13 @@ Customize skill content with their specific tools, clients, and schedule.
 - `graph-sync.md` (from this repo's `.claude/commands/graph-sync.md`) -- full vault knowledge graph rebuild
 - `graph-daily.md` (from this repo's `.claude/commands/graph-daily.md`) -- daily incremental graph sync
 
-**Copy all pre-built utility commands** from `examples/commands/` into `VAULT_PATH/.claude/commands/`. These are general-purpose commands every user should have available after setup completes:
-- `handoff.md` -- save current work state for a new session to resume
-- `pickup.md` -- resume from a previous handoff
+**Always copy these session-continuity skills** (every user gets these -- they are core, not optional):
+- `handoff.md` (from this repo's `.claude/commands/handoff.md`) -- save the current work state to a named briefing file so a fresh session can pick it up cold
+- `pickup.md` (from this repo's `.claude/commands/pickup.md`) -- resume from a named handoff: load the listed context and report where we left off
+
+These two are the backbone of context and task management. A single Claude session has a finite context window; once it fills up (or the user runs `/clear`, closes the window, or hits compaction), everything not written down is lost. `/handoff` checkpoints the live thread of work into `VAULT_PATH/.claude/handoffs/<name>.md` -- the goal, what's been done, what was tried and rejected, the exact next steps, and which files/commands to reload. `/pickup` reads that file in the next session and re-establishes shared context in seconds instead of the user re-explaining everything. Because each handoff is a named, persistent file in the vault, they also double as a track record of in-flight workstreams. **Install both for every user**, exactly like the setup and Integral skills above.
+
+**Copy these other pre-built utility commands** from `examples/commands/` into `VAULT_PATH/.claude/commands/`:
 - `monthly-review.md` -- periodic system health check and vault cleanup
 
 Also create the handoff storage directory: `VAULT_PATH/.claude/handoffs/` (the `/handoff` command stores named handoff files here).
@@ -470,6 +479,34 @@ This installs an interactive brainstorming skill that helps users think through 
 If the install fails (e.g., Node.js is not available), note it as a task in `Inbox/[YourCompany].md` for later and continue. Do not block setup on this.
 
 If the user chose full EOD processing, the daily graph sync is already included as Phase 6 of `/eod`. The standalone `/graph-daily` is available for manual runs.
+
+#### If Desktop Only (CoWork): Manual Skill Upload
+
+Claude CoWork does not auto-discover `.claude/commands/` files. Skills must be uploaded manually by the user through the **Customize** section in the CoWork app settings. Each skill file needs YAML frontmatter to be recognized.
+
+**Still copy skills to `VAULT_PATH/.claude/commands/`** (the CLI versions serve as the source of truth and work if the user later adopts the CLI). But also walk the user through uploading their core skills to CoWork:
+
+1. Tell the user: "Skills in CoWork work a little differently than in the CLI. You need to upload each one through the app. I will walk you through it."
+
+2. Copy the CoWork-formatted skill files from `cowork-commands/` in this repo to `VAULT_PATH/cowork-commands/` so the user has them locally:
+   - Copy all `.md` files from `REPO_PATH/cowork-commands/` to `VAULT_PATH/cowork-commands/`
+
+3. Walk through uploading the essential skills first. Use AskUserQuestion at each step:
+   - "Open the CoWork app settings. Look for the **Customize** section."
+   - "Find the option to add a custom skill or instruction. Click it."
+   - "Upload the file from your vault at `cowork-commands/morning.md` (or paste its contents)."
+   - Confirm: "Does it show up as an available skill?"
+
+4. Prioritize these skills for initial upload (the user can add more later):
+   - `morning.md` -- daily driver
+   - `eod.md` -- daily driver
+   - `strategy.md` -- most useful on-demand skill
+   - `handoff.md` + `pickup.md` -- session continuity
+   - `train.md`, `connect.md`, `finish.md` -- needed to continue setup
+
+5. Note remaining skills as a task: "You have [N] more skills available in `cowork-commands/`. Upload them through **Customize** whenever you want to add more."
+
+6. Add a note in CLAUDE.md under Available Integrations or a new Skills section: "CoWork skills are uploaded through the **Customize** section. Source files with YAML frontmatter are in `cowork-commands/`. To add a new skill, upload the file from that folder."
 
 ### 6F: Knowledge Graph Setup
 
