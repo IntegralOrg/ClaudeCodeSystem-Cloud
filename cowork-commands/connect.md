@@ -17,24 +17,16 @@ This is Part 3 of 4 in the setup process. The user has already run `/onboard` (b
 
 ## Step 0: Check Prerequisites
 
-### Runtime Mode
+### How Connections Work Here
 
-Before anything else, determine which Claude interface the user is using for connections.
-
-AskUserQuestion: "Which Claude interface are you using for this setup?"
-Options:
-- Claude Desktop app (most likely if you downloaded Claude from the web)
-- Claude Code in the terminal / command line
-- Both
-
-Set `CLAUDE_RUNTIME` from their answer.
+The user is running **Claude Code on the web** (that was recorded in CLAUDE.md during `/onboard`). No need to ask which interface they are using.
 
 Connection rules:
-- **Desktop / CoWork**: Built-in integrations must be configured by the user through the **Customize** section in the app settings. **Claude cannot create or modify MCP connections for Desktop users.** Never write `mcpServers` config or instruct yourself to set one up. If a new integration is needed, tell the user what to connect and where to find it in the **Customize** section.
-- **CLI**: Local Claude Code config files are valid. MCP servers can be configured in `~/.claude/settings.json`.
-- **Both**: Use the **Customize** section for Desktop integrations. Only add CLI config for tools they also need in terminal sessions. `.env` works for both.
+- **Built-in integrations** (Gmail, Google Calendar, ClickUp, etc.) must be connected by the user through the **Customize** / connectors section of Claude Code on the web. **Claude cannot create or modify those connections itself.** Never try to set one up on the user's behalf. If a new integration is needed, tell the user what to connect and where to find it in the **Customize** section.
+- **Workspace settings files** are real and editable: after an integration or MCP server is connected, add its `"mcp__...__*"` entry to the `permissions.allow` array in `~/.claude/settings.json`. Self-configured MCP servers can be added to `mcpServers` there too.
+- **API-based integrations** (credentials in `.env`, called with curl or scripts) work directly in the workspace. `.env` is the home for all API keys.
 
-Before connecting any tools, verify the user's machine has what we need. Run these checks silently and only surface issues.
+Before connecting any tools, verify the workspace has what we need. Run these checks silently and only surface issues.
 
 ### Python packages
 
@@ -57,19 +49,11 @@ Options:
 
 ### Node.js and npx
 
-Only relevant if `CLAUDE_RUNTIME` includes CLI, or if a local script explicitly needs Node.js. Some CLI MCP servers need Node.js. Check: `npx --version 2>&1`
+Only relevant if an MCP server or script we are setting up needs Node.js. Some MCP servers need it. Check: `npx --version 2>&1`
 
-If npx is not found:
+If npx is not found, tell the user: "One of your tools needs Node.js -- a free runtime that works behind the scenes. I can install it in the workspace."
 
-AskUserQuestion: "Some tools need Node.js installed. It is a free runtime -- like a behind-the-scenes engine. Want me to help install it?"
-Options:
-- Yes
-- I already have it, something is wrong with my PATH
-- Skip tools that need it
-
-**If yes (macOS):** Check for Homebrew (`brew --version`). If available: `brew install node`. If no Homebrew: "Go to **nodejs.org** and download the LTS installer. Run it and follow the prompts."
-
-**If yes (Linux):** `curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs` (or guide them to nodejs.org).
+Run: `curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs` (drop `sudo` if it is unavailable in the workspace).
 
 After install, verify: `npx --version`
 
@@ -160,8 +144,7 @@ Options:
 
 6. Repeat for **Gmail** if they want email connected.
 
-7. If `CLAUDE_RUNTIME` includes CLI, update CLI permissions in `~/.claude/settings.json`, adding `"mcp__claude_ai_Google_Calendar__*"` and/or `"mcp__claude_ai_Gmail__*"` to the allow list.
-   - If Desktop only: do not write local config here. The integration lives in the app's **Customize** section.
+7. Update permissions in `~/.claude/settings.json`, adding `"mcp__claude_ai_Google_Calendar__*"` and/or `"mcp__claude_ai_Gmail__*"` to the allow list. (The connection itself lives in the **Customize** section -- this just pre-approves the tools so Claude does not have to ask every time.)
 
 8. Test the connection:
 - "Let me pull up your calendar to make sure it is working..."
@@ -184,7 +167,7 @@ Repeat test for Gmail if connected.
 
 #### Full Control Way: `gws` CLI (Cloud Console fallback)
 
-Prefer the `gws` CLI if it is available on the machine. It is the recommended full-control path because it automates most of the Google setup. If `gws` is unavailable or fails, use the Cloud Console fallback below.
+Prefer the `gws` CLI if it is available in the workspace. It is the recommended full-control path because it automates most of the Google setup. If `gws` is unavailable or fails, use the Cloud Console fallback below.
 
 This fallback walkthrough assumes the user has never seen Cloud Console and has no existing project.
 
@@ -394,14 +377,14 @@ Options:
 CLICKUP_API_KEY=<token>
 ```
 
-5. **Choose the connection path based on `CLAUDE_RUNTIME`.**
+5. **Choose the connection path.**
 
-**If Desktop or Both:**
-- Check whether ClickUp is available in the app's **Customize** section.
-- If yes, walk the user through connecting it there. Do not rely on a local `mcpServers` file for Desktop.
-- If no Desktop integration exists, keep the API token in `.env` and treat ClickUp as an API-based integration for now.
+**Built-in integration (check this first):**
+- Check whether ClickUp is available in the **Customize** / connectors section of Claude Code on the web.
+- If yes, walk the user through connecting it there. **Only the user can add it** -- do not try to configure the built-in integration yourself. Once connected, add the matching `"mcp__...__*"` entry to the `permissions.allow` array in `~/.claude/settings.json`.
+- If no built-in integration exists, set up a workspace MCP server (below) or keep the API token in `.env` and treat ClickUp as an API-based integration.
 
-**If CLI or Both and they want terminal support too:**
+**Workspace MCP server (if there is no built-in integration, or it does not work):**
 - Read `~/.claude/settings.json`. Add a `mcpServers` block for ClickUp (merge with existing mcpServers if any):
 
 ```json
@@ -420,6 +403,8 @@ CLICKUP_API_KEY=<token>
 - `npx -y @anthropic/mcp-remote https://mcp.clickup.com/s/<connection_id>` (ClickUp's hosted MCP)
 - `npx -y clickup-mcp-server` (community package with `CLICKUP_API_KEY` env var)
 
+Also add `"mcp__clickup__*"` to the `permissions.allow` array in `~/.claude/settings.json`.
+
 If using an API-key-based server, pass the key via the env block:
 ```json
 {
@@ -433,10 +418,10 @@ If using an API-key-based server, pass the key via the env block:
 }
 ```
 
-After writing the CLI config, tell the user: "I have added the ClickUp connection to your CLI settings. Let me test it."
+After writing the config, tell the user: "I have added the ClickUp connection to your workspace settings. Let me test it."
 
 6. **Test the connection.**
-- If they connected ClickUp through the Desktop **Customize** section or CLI MCP server, use the ClickUp tools to list their workspaces or spaces. Show results.
+- If they connected ClickUp through the **Customize** section or a workspace MCP server, use the ClickUp tools to list their workspaces or spaces. Show results.
 - If they are using the API-token fallback, test with a lightweight ClickUp API call using the token saved in `.env`.
 
 AskUserQuestion: "I found these ClickUp spaces: [list]. Right?"
@@ -598,12 +583,12 @@ For tools not covered above (Asana, Trello, Todoist, Teams, Otter, Fireflies, To
 
 **First, check if an integration exists for the tool.** Use WebSearch: `"[tool name] Claude integration"`, `"[tool name] MCP server" claude`, or `"[tool name] model context protocol"`.
 
-**If a Desktop/CoWork integration exists and `CLAUDE_RUNTIME` includes Desktop:**
-1. Tell the user which integration to add and walk them through finding it in the **Customize** section. **Do not attempt to configure this yourself** -- only the user can add integrations through the Desktop/CoWork **Customize** section.
-2. Once they confirm it is connected, test with a lightweight tool call
+**If a built-in integration exists in Claude Code on the web:**
+1. Tell the user which integration to add and walk them through finding it in the **Customize** / connectors section. **Do not attempt to configure this yourself** -- only the user can add built-in integrations through the **Customize** section.
+2. Once they confirm it is connected, add `"mcp__toolname__*"` to the `permissions.allow` array in `~/.claude/settings.json`, then test with a lightweight tool call
 3. Update CLAUDE.md integrations section
 
-**If a CLI MCP server exists and `CLAUDE_RUNTIME` is CLI only:**
+**If no built-in integration exists but an MCP server does:**
 1. Search for the install command (usually `npx -y @some-org/mcp-server-toolname`)
 2. Walk the user through getting credentials (API key, OAuth token, etc.)
 3. Save credentials to `.env`
@@ -625,7 +610,7 @@ For tools not covered above (Asana, Trello, Todoist, Teams, Otter, Fireflies, To
 6. Test with a lightweight MCP tool call
 7. Update CLAUDE.md integrations section (add to "Direct Connections")
 
-**If no usable Desktop integration or CLI MCP server exists:**
+**If no usable built-in integration or MCP server exists:**
 1. Search for the tool's REST API documentation
 2. Walk the user through getting an API key or personal access token
 3. Save to `.env`
@@ -645,9 +630,9 @@ When all tools are connected (or explicitly skipped):
 
 ### Verify integration setup
 
-If `CLAUDE_RUNTIME` includes CLI, read `~/.claude/settings.json` and confirm:
-1. Every connected CLI MCP server has an entry in `mcpServers`
-2. Every CLI MCP server has a matching `"mcp__servername__*"` entry in `permissions.allow`
+Read `~/.claude/settings.json` and confirm:
+1. Every workspace-configured MCP server has an entry in `mcpServers`
+2. Every connected MCP server and built-in integration has a matching `"mcp__servername__*"` entry in `permissions.allow`
 3. No placeholder values remain (no `your_...` or `<token>` strings in env blocks)
 
 If anything is missing, fix it now.
@@ -669,6 +654,6 @@ Read CLAUDE.md and confirm:
 
 "Here is where we stand:"
 - List each tool with ✓ (connected and tested) or ○ (skipped, with reason)
-- Note which tools were connected in the Desktop app UI, which were configured for CLI, and which credentials were saved in `.env`
+- Note which tools were connected as built-in integrations in the **Customize** section, which were configured as workspace MCP servers, and which credentials were saved in `.env`
 
 Then: "All your tools are connected and tested. The last step is `/finish` -- I will show you the system in action with your real data and teach you how to get the most out of it over time. Type `/finish` when you are ready."
