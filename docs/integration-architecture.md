@@ -2,7 +2,7 @@
 
 > **You do not need to understand every detail in this document.** Claude can walk you through setting up any connection. This is a reference for when you want to know how things work under the hood.
 
-This document explains the technical architecture behind the Brain personal assistant system. It covers how a `.env` file, MCP servers, REST/GraphQL API calls, custom scripts, and skills work together to turn an Obsidian vault into an automated operations hub.
+This document explains the technical architecture behind the Brain personal assistant system. It covers how a `.env` file, MCP servers, REST/GraphQL API calls, custom scripts, and skills work together to turn a Git-backed Markdown vault into an automated operations hub.
 
 ---
 
@@ -46,8 +46,8 @@ The system connects to external platforms through five layers, each serving a di
 │  → Unattended scheduled routines (advanced)       │
 │                                                   │
 ├─────────────────────────────────────────────────┤
-│                  Obsidian Vault                   │
-│           (markdown files on disk)               │
+│              Git-backed Vault (Markdown)          │
+│         (markdown files in a Git repo)           │
 │        Source of truth for all task state         │
 └─────────────────────────────────────────────────┘
 ```
@@ -58,8 +58,8 @@ The system connects to external platforms through five layers, each serving a di
 
 Every API key, OAuth token, and secret lives in a single `.env` file at the vault root. This file is:
 
-- **Gitignored** (never committed to version control)
-- **Local-only** (excluded from iCloud sync if applicable)
+- **Gitignored** (never committed to the repository)
+- **Workspace-only** (it lives in your cloud workspace and is never pushed to the repo)
 - **The single source of truth** for credentials
 
 ### What's in the .env
@@ -104,7 +104,7 @@ curl -s -H "X-Api-Key: ${FATHOM_API_KEY}" \
 
 ### Why Not Use a Secrets Manager?
 
-Simplicity. The vault runs on one machine. The AI agent reads from the local filesystem. A `.env` file is the simplest thing that works. No network calls to a vault service, no token rotation complexity, no extra dependencies. The security model is: if someone has access to this machine, they have access to everything anyway.
+Simplicity. The AI agent reads credentials straight from the `.env` file in your cloud workspace. A `.env` file is the simplest thing that works. No network calls to a vault service, no token rotation complexity, no extra dependencies. The security model is: the `.env` stays in your workspace and is never committed to the repo, so the secrets never leave with your Markdown files.
 
 ### Reference Pointers in the Vault
 
@@ -118,7 +118,7 @@ The vault has a `Resources/API Keys/` folder with markdown files that document w
 - **Rate limit**: 60 calls/min
 ```
 
-This lets you browse your integrations in Obsidian without exposing secrets.
+This lets you browse your integrations in the vault without exposing secrets.
 
 ---
 
@@ -128,10 +128,7 @@ Some tools have a direct connection built for Claude. Think of them as built-in 
 
 ### How MCP Servers Work
 
-MCP-style direct connections are configured outside the vault. The exact path depends on how the user runs Claude:
-1. **Claude Desktop app or CoWork**: use the app's **Customize** section in settings. **Only the user can add these** -- Claude cannot configure its own MCP connections through Desktop/CoWork. If a new integration is needed, tell the user what to connect and where to find it in the **Customize** section.
-2. **Claude Code CLI**: use Claude Code's local settings/config (`~/.claude/settings.json`)
-3. **Both**: use the app UI for Desktop, and only add CLI config for tools needed in terminal sessions
+MCP-style direct connections are configured outside the vault, in Claude Code on the web. You add them through the app's **Customize** section in settings. **Only the user can add these** -- Claude cannot configure its own MCP connections. If a new integration is needed, tell the user what to connect and where to find it in the **Customize** section.
 
 Each direct connection:
 1. Connects to an external service (your task manager, Google Calendar, etc.)
@@ -690,19 +687,9 @@ For occasional use, Claude can access many tools through the web. Using WebFetch
 
 Each shell command runs in a fresh session. Environment variables from `source .env` don't persist to the next command. Always source credentials and use them in the same command chain (`&&`), or extract values and pass them explicitly.
 
-### Atomic Writes for Synced Vaults
+### File Edits Are Safe
 
-If your vault syncs via iCloud/Dropbox/etc., files can change between read and write operations. Use Python atomic writes (read-modify-write in a single script execution) instead of the AI's built-in file editor for files that change frequently:
-
-```python
-python3 << 'EOF'
-with open("path/to/file.md", "r") as f:
-    content = f.read()
-# ... modify content ...
-with open("path/to/file.md", "w") as f:
-    f.write(content)
-EOF
-```
+The vault is a Git repository in your cloud workspace -- there is no background file sync, so the built-in editor is safe for reads and writes. You do not need special atomic-write handling; edit files normally. Git is the durability layer: commit and push to persist your changes.
 
 ### MCP Tool Payload Limits
 

@@ -64,7 +64,7 @@ what carries into tomorrow. Write in first person, plain language.]
 
 ## Write
 
-1. Use the Write tool to create `Work/Daily/YYYY-MM-DD.md` (new file, no atomic write needed)
+1. Use the Write tool to create `Work/Daily/YYYY-MM-DD.md` (new file)
 2. If the file already exists, warn the user and ask before overwriting
 
 ---

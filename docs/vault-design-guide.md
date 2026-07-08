@@ -1,26 +1,26 @@
-# How to Build an AI-Powered Obsidian Vault (Personal Assistant System)
+# How to Build an AI-Powered Markdown Vault (Personal Assistant System)
 
-This is a breakdown of how an Obsidian vault works as an AI-powered personal assistant system. The vault is the central hub; Claude is the brain that operates on it, whether through the Claude Desktop app or the Claude Code CLI. Together they replace a human executive assistant for task management, meeting processing, email triage, time tracking, and client work.
+This is a breakdown of how a Git-backed Markdown vault works as an AI-powered personal assistant system. The vault is the central hub; Claude is the brain that operates on it through Claude Code on the web. Together they replace a human executive assistant for task management, meeting processing, email triage, time tracking, and client work.
 
 If you want to replicate something like this, here's everything you need to know.
 
 ---
 
-## Why Obsidian?
+## Why a Git-backed Markdown vault?
 
-Obsidian is like a notes app, but your notes live on your computer as plain text files instead of on someone else's server. This matters for three reasons:
+Your notes are plain Markdown files in a Git repository that Claude Code reads and writes directly in your cloud workspace. This matters for three reasons:
 
-1. **Speed.** Claude can read files on your computer instantly. If your notes were in a cloud app (like Notion or Google Docs), Claude would need to go through the internet to reach them, which is slower and more complicated to set up.
+1. **Directness.** Claude reads and writes the files in your vault straight from the workspace -- no separate app, database, or export step between the AI and your notes.
 
-2. **Simplicity.** Your notes are just text files in a folder. You can open them with any text editor, copy them, back them up, or move them to another computer by dragging a folder. No accounts, no subscriptions, no lock-in.
+2. **Simplicity.** Your notes are just text files in a folder. You can open them with any text editor, view them on GitHub, back them up, or clone them anywhere. No proprietary format, no lock-in.
 
-3. **Longevity.** Plain text files (called "markdown" files) are tiny, open instantly, and will never become unreadable because a company shut down or changed their format. Notes you write today will be readable in 20 years.
+3. **Longevity and safety.** Plain text files (called "markdown" files) are tiny, open instantly, and will never become unreadable because a company shut down or changed their format. Git keeps a full history of every change, so you can always see what changed and roll back. Notes you write today will be readable in 20 years.
 
 ---
 
 ## The Core Idea
 
-An Obsidian vault is just a folder of markdown files. Claude Code is an AI agent that can read, write, and edit files, run shell commands, and call APIs. By pointing Claude Code at your vault and giving it a detailed instruction file (`CLAUDE.md`), you get an AI that:
+The vault is just a folder of Markdown files in a Git repository. Claude Code is an AI agent that can read, write, and edit files, run shell commands, and call APIs. By pointing Claude Code at your vault and giving it a detailed instruction file (`CLAUDE.md`), you get an AI that:
 
 - Knows your entire system (folder structure, workflows, preferences)
 - Can read and update any note in your vault
@@ -237,9 +237,9 @@ If a user's EOD grows too large for one run, you can split these into phases lat
 
 The EOD uses a **manifest file** (`/tmp/eod-manifest-TODAY.md`) as a tracking ledger. Every extracted item gets a row with: item description, client, type, source, where it was routed, and status. This prevents items from getting lost during a long multi-step process and serves as an audit trail.
 
-#### Atomic Writes
+#### File Edits Are Safe
 
-If your vault syncs via iCloud (or Dropbox, or any cloud sync), files can change between when the AI reads them and when it writes. The solution: use Python scripts that read-modify-write in a single operation, rather than the AI's built-in file editor which can fail on sync conflicts.
+The vault is a Git repository in your cloud workspace -- there is no background file sync racing against the AI's edits, so the built-in file editor is safe for reads and writes. Git history is the safety net: commit and push to persist changes and roll back if needed.
 
 ### Morning Review (`/morning`)
 
@@ -323,7 +323,7 @@ Keep a `Templates/` folder with standard note structures. The AI uses these when
 - **Client Note** -- Overview, key contacts table, notes, action items
 - **Video Transcript** -- Date, speaker, duration, source, transcript body
 
-Templates use Obsidian's `{{date}}` and `{{title}}` placeholders.
+Templates use `{{date}}` and `{{title}}` placeholders that Claude fills in when creating a note.
 
 ---
 
@@ -361,7 +361,7 @@ After the review, improvement ideas go to a dedicated `System Improvements.md` f
 
 Create the folder structure above. Start with just `Inbox/`, `Work/`, `Resources/`, and `Templates/`. You can add more folders later as your system grows. Do not try to build the full structure on day one.
 
-If you are using Obsidian, create a new vault and add these folders inside it.
+Create these folders in your vault repository -- Claude can make them for you during `/onboard`.
 
 ### Step 2: Write Claude's Instruction Manual
 
@@ -408,9 +408,9 @@ The goal is not to build the perfect system on day one. It is to build a system 
 
 ---
 
-## What Makes This Different from a Normal Obsidian Vault
+## What Makes This Different from a Normal Markdown Vault
 
-A normal Obsidian vault is a passive knowledge base. You write notes, you read notes. This system is **active**:
+A normal notes vault is a passive knowledge base. You write notes, you read notes. This system is **active**:
 
 - The AI processes raw inputs (call transcripts, emails, Slack messages) into structured, routed action items automatically.
 - Tasks flow from capture to client files to project management tools without manual sorting.

@@ -1,66 +1,49 @@
 # Onboarding Guide: Setting Up Your Personal Assistant
 
-This guide is a reference for what the setup process covers. **You do not need to follow these steps manually.** Instead, open Claude Code in the repository folder and type:
+This guide is a reference for what the setup process covers. **You do not need to follow these steps manually.** Instead, open your vault in [Claude Code on the web](https://code.claude.com/docs/en/claude-code-on-the-web) and type:
 
 ```
 /onboard
 ```
 
-Claude will interview you using a friendly question-and-answer format with selectable options (no typing required for most questions). It will first ask whether you are using the Claude Desktop app or the Claude Code CLI, then ask about your name, tools, schedule, and preferences, and build everything for you in about 20 minutes.
+Claude will interview you using a friendly question-and-answer format with selectable options (no typing required for most questions). It asks about your name, tools, schedule, and preferences, and builds everything for you in about 20 minutes.
+
+This is the **cloud edition**: it runs in Claude Code on the web, in your browser. Your vault is a Git repository of Markdown files that Claude reads and writes directly in a cloud workspace. There is nothing to install on your own computer.
 
 The setup has 4 parts:
 
 | Step | Command | What It Does | Time |
 |------|---------|-------------|------|
-| 1 | `/onboard` | Detect Desktop vs CLI, learn about you, build your notes folder and files | ~20 min |
-| 2 | `/train` | Walk through Obsidian, your vault, skills, and the daily loop | ~15 min |
+| 1 | `/onboard` | Learn about you, build your vault folders and files | ~20 min |
+| 2 | `/train` | Walk through your vault, skills, and the daily loop | ~15 min |
 | 3 | `/connect` | Connect each of your tools (calendar, email, tasks, etc.) one by one | ~20 min |
 | 4 | `/finish` | Live demo with real data, improvement tips, how to maximize the system | ~10 min |
 
 The steps below explain what each part sets up, so you can understand what each piece does or make changes later.
 
 **What you will need:**
-- A Mac or PC
-- [Obsidian](https://obsidian.md) (free)
-- A [Claude Max subscription](https://claude.ai) ($100/month -- includes Claude Code)
+- A GitHub account (for your vault repository)
+- A [Claude subscription](https://claude.ai) that includes Claude Code on the web
 
-**Windows users -- do these steps before opening Claude for the first time:**
-1. Create a **Brain** folder in your Documents folder
-2. **Enable Developer Mode** -- Settings > System > For developers
-3. **Install Git Bash** -- Download from [git-scm.com](https://git-scm.com), accept all defaults
-4. **Install Claude** -- Download from [claude.ai/download](https://claude.ai/download). Open it once and let it install **Virtual Machine Platform** (a Windows component it needs)
-5. **Restart your computer** -- One restart covers Git, Developer Mode, and Virtual Machine Platform
-6. Open Claude, navigate to this folder, and type `/onboard`
-
-These must be done before `/onboard` because Claude Code cannot run properly without them.
-
-**What you are building:** A personal assistant that lives in your notes folder. It reads your calendar, processes your email, tracks your tasks, and builds tomorrow's plan while you sleep. By the end of all 4 steps, you will have a working daily system.
+**What you are building:** A personal assistant that lives in your vault. It reads your calendar, processes your email, tracks your tasks, and builds tomorrow's plan while you sleep. By the end of all 4 steps, you will have a working daily system.
 
 ---
 
-## Step 1: Pick Your Claude Interface
+## Step 1: Open Your Vault in Claude Code on the Web
 
-The setup works in two environments:
-- **Claude Desktop app** -- most likely if you downloaded Claude from the web and use the app UI
-- **Claude Code CLI** -- if you opened Terminal and ran `claude`
-- **Both** -- if you move between the app and terminal
+The setup runs in [Claude Code on the web](https://code.claude.com/docs/en/claude-code-on-the-web): open your vault repository in the browser, and Claude works on the files directly in a cloud workspace. There is no desktop app to install and no terminal to open.
 
-This matters because built-in integrations are configured differently:
-- **Desktop** -- use the app's **Customize** section in settings
-- **CLI** -- use Claude Code settings files
-- **Both** -- use the **Customize** section for Desktop, and only add CLI config for tools you need in terminal sessions
-
-Claude asks this during `/onboard` and records it in your CLAUDE.md so later setup steps know which path to use.
+Built-in integrations (like Gmail or Google Calendar) are connected through the **Customize** / connectors section of Claude Code on the web. Claude walks you through this during `/connect`.
 
 ## Step 2: Give Claude Permission to Help You
 
-Before Claude can do anything, it needs permission to read and write files, run commands, and connect to your tools. There are two permission files: one for global settings (applies everywhere) and one for local settings (applies only inside your notes folder).
+Before Claude can do anything, it needs permission to read and write files, run commands, and connect to your tools. There are two permission files: one for global settings (applies across your workspace) and one for local settings (applies only inside your vault).
 
-**Important:** the settings-file path below is for CLI users only. If you are using Claude Desktop or CoWork, direct connections (MCP servers) can only be configured by you through the app's UI -- Claude cannot set these up itself. `.env` still works in both environments for API-based tools and scripts.
+**Important:** direct connections (MCP servers) are configured by you through the **Customize** / connectors section of Claude Code on the web -- Claude cannot set these up itself. `.env` still works for API-based tools and scripts.
 
 ### Global Settings
 
-This file lives at `~/.claude/settings.json` (your home folder, inside the `.claude` folder). It controls what Claude can do everywhere on your computer.
+This file lives at `~/.claude/settings.json` (in the `.claude` folder of your workspace). It controls what Claude can do across your workspace.
 
 Copy and paste this into the file:
 
@@ -96,10 +79,10 @@ Copy and paste this into the file:
 
 | Permission | What it allows |
 |---|---|
-| `Read` | Claude can read files on your computer |
-| `LS` | Claude can list folders on your computer |
+| `Read` | Claude can read files in your workspace |
+| `LS` | Claude can list folders in your workspace |
 | `Glob` | Claude can find files by name or pattern |
-| `Grep` | Claude can search file contents on your computer |
+| `Grep` | Claude can search file contents in your workspace |
 | `Edit` | Claude can make changes to existing files |
 | `Write` | Claude can create new files |
 | `NotebookEdit` | Claude can work with notebook files |
@@ -107,9 +90,9 @@ Copy and paste this into the file:
 | `WebSearch` | Claude can search the web for current information |
 | `mcp__context7__*` | Claude can look up documentation |
 
-**Adding more tools:** This is mainly for CLI users. Each tool Claude connects to needs its own permission line. When you run `/connect`, Claude will add these automatically for the CLI path. The pattern is always `mcp__` followed by the tool name and `__*`. For example, if you connect ClickUp, Claude adds `"mcp__clickup__*"` to the allow list. If you connect Claude to Gmail or Google Calendar through Claude.ai, CLI users add lines like `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the allow list. Desktop users do not need to manage this manually for integrations added through the **Customize** section.
+**Adding more tools:** Each tool Claude connects to needs its own permission line. When you run `/connect`, Claude adds these automatically. The pattern is always `mcp__` followed by the tool name and `__*`. For example, if you connect ClickUp, Claude adds `"mcp__clickup__*"` to the allow list. If you connect Gmail or Google Calendar, Claude adds lines like `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the allow list.
 
-**Additional directories** are folders outside your notes folder that Claude can access. The defaults cover your Desktop, Downloads, temporary files, scheduled tasks, and scripts.
+**Additional directories** are folders outside your vault that Claude can access.
 
 ### Local Settings
 
@@ -143,21 +126,13 @@ You do not need to duplicate permissions from the global file here. The global s
 
 ---
 
-## Step 3: Install Obsidian and Create Your Notes Folder
+## Step 3: Create Your Notes Folder (Vault)
 
-Obsidian is a notes app where your notes live on your computer as plain text files instead of on someone else's server. Claude can read files on your computer instantly, which makes Obsidian a perfect workspace.
-
-### Download and Install
-
-1. Go to [obsidian.md](https://obsidian.md) and download the app for your computer
-2. Install and open it
-3. Choose **"Create new vault"**
-4. Name it something like **"Brain"** (or whatever you prefer)
-5. Choose where to save it (your Documents folder works fine)
+Your vault is a Git repository of plain Markdown files that Claude reads and writes directly in your cloud workspace. Plain text means your notes stay portable and readable for decades, and Git keeps a full history so nothing is ever lost.
 
 ### Create Your Starter Folders
 
-Inside your new notes folder, create these three folders:
+Inside your vault, create these three folders:
 
 ```
 Brain/
@@ -198,7 +173,7 @@ The template includes sections for:
 
 ## Step 5: Connect Your Tools (`/connect`)
 
-The `/connect` command walks you through connecting each tool one by one, testing each connection with real data before moving on. It uses a different strategy depending on whether you are on Desktop or CLI.
+The `/connect` command walks you through connecting each tool one by one, testing each connection with real data before moving on.
 
 **Recommended first connections:**
 - **Google Calendar** -- Know what is coming tomorrow, create time blocks
@@ -209,10 +184,7 @@ For Google services, `/connect` offers two paths:
 - **Easy way:** Sign in through Claude.ai's settings page (2 minutes, no technical setup)
 - **Full control way:** Use the `gws` CLI to set up Google access (recommended for custom Google Drive/Docs workflows). Cloud Console is the fallback if the CLI is unavailable.
 
-For other built-in integrations:
-- **Desktop users** add them through the **Customize** section in settings
-- **CLI users** can use local Claude Code config where supported
-- **Both** can do both, but only if they need the integration in both places
+Other built-in integrations are added through the **Customize** / connectors section of Claude Code on the web.
 
 See [Integration Architecture](integration-architecture.md) for the full technical reference on how each tool connects, including credential types and API details.
 
@@ -258,11 +230,10 @@ If you did not run `/eod` yet, you can run it now, or start fresh and run it ton
 
 ### Morning (5 minutes)
 
-1. Open Obsidian and read `Inbox/Today.md`
-2. Open Claude Code in your notes folder
-3. Type `/morning`
-4. Claude walks you through the plan and helps you adjust if needed
-5. Confirm the plan. You are ready to start.
+1. Open your vault in Claude Code on the web and read `Inbox/Today.md`
+2. Type `/morning`
+3. Claude walks you through the plan and helps you adjust if needed
+4. Confirm the plan. You are ready to start.
 
 ### During the Day
 
@@ -292,13 +263,13 @@ Plain-language definitions for terms you will see in the documentation.
 
 | Term | What It Means |
 |---|---|
-| **Vault** | Your notes folder. Obsidian calls it a "vault" but it is just a folder of text files on your computer. |
+| **Vault** | Your notes repository -- a Git repo of Markdown (text) files that Claude Code reads and writes in your cloud workspace. |
 | **CLAUDE.md** | Claude's instruction manual. A text file at the root of your notes folder that Claude reads every session. |
 | **Skill** | A successful task turned into a repeatable routine. A text file in `.claude/commands/` that tells Claude how to run a multi-step process. You type `/name` to run it. Your skills library grows over time from your actual work. |
 | **MCP server** | A direct connection between Claude and a tool (like ClickUp or Google Calendar). Once set up, Claude can use the tool without going through a browser. |
 | **API** | A way for software to talk to other software. When Claude "calls an API," it is asking another service for information or telling it to do something. |
 | **OAuth** | A secure login handshake. Instead of giving Claude your password, OAuth lets you approve access once and Claude gets a special key to use going forward. |
-| **.env file** | Your password keychain file. A text file that stores all the login information Claude needs for your tools. It never leaves your computer. |
+| **.env file** | Your password keychain file. A text file that stores all the login information Claude needs for your tools. It stays in your workspace and is never committed to the repository. |
 | **Manifest** | A tracking list. During long processes, Claude writes down every item it finds so nothing gets lost. |
 | **EOD pipeline** | The end-of-day routine. A multi-step process that collects everything from your day and builds tomorrow's plan. |
 | **Sub-agent** | A separate Claude session launched from within your current session. The `/eod` command uses sub-agents so each phase gets a fresh context window. You do not need to do anything special; it happens automatically when you run `/eod`. |

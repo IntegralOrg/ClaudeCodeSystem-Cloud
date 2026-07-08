@@ -27,7 +27,7 @@ These layers make the vault navigable as a connected network, not just a folder 
 
 ## Phase 1: Frontmatter Audit
 
-Process every markdown file in the vault (exclude `.claude/`, `Graph/`, `Templates/`, `.obsidian/`).
+Process every markdown file in the vault (exclude `.claude/`, `Graph/`, `Templates/`).
 
 For each file:
 1. Check if frontmatter exists (file starts with `---`)

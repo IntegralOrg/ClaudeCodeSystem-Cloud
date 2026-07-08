@@ -204,7 +204,7 @@ Options:
 ```
 
 5. **Create calendar events** for each approved block.
-6. **Update Today.md** with the finalized schedule table using Python read-modify-write (iCloud safety).
+6. **Update Today.md** with the finalized schedule table.
 
 ---
 
@@ -228,7 +228,7 @@ If no meetings: "No meetings today. Full deep work runway. [Top priority] starts
 - Use `AskUserQuestion` for ALL interaction points. Never just ask a question in text and wait for the user to type. Every decision point must use selectable options.
 - If the plan looks clean and "All good" is selected in Step 3, the entire review can complete with just 3 taps: "All good" -> "Skip"/"Create all" -> done. Minimize friction.
 - Today.md is ephemeral (overwritten each EOD run). The daily note (`Work/Daily/YYYY-MM-DD.md`) is the permanent record.
-- For iCloud-safe writes to Inbox files, always use Python read-modify-write (same pattern as EOD).
+- When updating Inbox files, read the file, modify it, and write it back (same pattern as EOD). The vault is a Git repository in your cloud workspace, so there is no background sync to worry about.
 - **Time block granularity**: Don't create 15-minute blocks for everything. Group related small tasks into blocks of 30-90 minutes.
 - **Overcommitment guard**: If total estimated work exceeds available deep work time, force a prioritization conversation in Step 3 before creating blocks.
 - **Calendar cleanup**: If the user ran /morning earlier today and wants to re-run, check for existing time blocks from this morning and offer to replace them rather than duplicating.

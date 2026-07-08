@@ -64,7 +64,7 @@ Generate a `Inbox/Today.md` for tomorrow based on:
 - Priority tiers from CLAUDE.md
 - Their schedule preferences
 
-Show them the result in Obsidian: "Open `Inbox/Today.md` in Obsidian. This is what you will see every morning."
+Show them the result: "Open `Inbox/Today.md`. This is what you will see every morning."
 
 AskUserQuestion: "Want to adjust anything in tomorrow's plan?"
 Options:
@@ -224,4 +224,4 @@ Options:
 
 ---
 
-**Final message:** "Welcome to your new system. Tomorrow morning, open Obsidian, check Today.md, and type `/morning`. I will be here."
+**Final message:** "Welcome to your new system. Tomorrow morning, open `Inbox/Today.md`, and type `/morning`. I will be here."

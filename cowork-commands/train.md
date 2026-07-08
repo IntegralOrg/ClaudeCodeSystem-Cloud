@@ -30,11 +30,11 @@ If everything looks good: "Everything from the onboard step is here. Let me show
 
 ## Step 2: What Is This Folder?
 
-"You are looking at your notes folder (Obsidian calls it a 'vault'). It is just a folder of text files on your computer. Nothing is in the cloud, nothing is on someone else's server. Claude can read and write these files instantly because they are right here on your machine."
+"You are looking at your notes folder -- your vault. It is a Git repository of plain Markdown text files in your cloud workspace. Claude Code reads and writes these files directly, so it can update them instantly as you work."
 
-Open Obsidian and walk them through the key folders:
+Walk them through the key folders:
 
-"Let me give you a quick tour. You should be able to see these folders in Obsidian's sidebar:"
+"Let me give you a quick tour. Here are the folders in your vault:"
 
 - **Inbox/** -- "This is your command center. New tasks, today's plan, and per-client task lists all live here. Think of it as your desk where active work sits."
 - **Work/** -- "Professional projects. Each client gets their own subfolder with call transcripts, archives, and notes."
@@ -81,7 +81,7 @@ Options:
 - What if I want to add something later?
 - Show me how to edit it
 
-If they want to see how to edit: walk them through opening CLAUDE.md in Obsidian and making a small change (like adjusting lunch time). Show them that it is just a text file they can type in.
+If they want to see how to edit: walk them through opening CLAUDE.md and making a small change (like adjusting lunch time). Show them that it is just a text file they can type in.
 
 ---
 
@@ -132,11 +132,11 @@ Options:
 - How do I add to the entity registry?
 - Show me an example
 
-If "What are wiki-links?": "A wiki-link looks like this: `[[Path/To/File|Display Name]]`. In Obsidian, it becomes a clickable link. Your agent creates these automatically when it recognizes a name, client, or concept from the entity registry."
+If "What are wiki-links?": "A wiki-link looks like this: `[[Path/To/File|Display Name]]`. It connects one note to another so Claude traverses by relationship rather than folder path. Your agent creates these automatically when it recognizes a name, client, or concept from the entity registry."
 
 If "How do I add?": Show them the entity registry and walk through adding one entry.
 
-If "Show me an example": Open a file that has wiki-links and show how the connections work in Obsidian's graph view.
+If "Show me an example": Open a file that has wiki-links and show how the connections between notes work.
 
 ---
 
@@ -175,7 +175,7 @@ Explain the daily loop in 4 simple beats:
 
 1. **End of day:** "Before you wrap up, type `/eod`. I process your calls, emails, and messages, organize everything, and build tomorrow's plan. You can walk away while it runs."
 
-2. **Morning (5 minutes):** "You open Obsidian, look at `Inbox/Today.md` which I built during the EOD run, then type `/morning`. I walk you through the plan and help you adjust if needed."
+2. **Morning (5 minutes):** "You open `Inbox/Today.md`, which I built during the EOD run, then type `/morning`. I walk you through the plan and help you adjust if needed."
 
 3. **During the day (as needed):** "Ask me to do things: draft an email, look up a client, create a task, prep for a meeting. I work from the notes in your vault."
 

@@ -50,7 +50,6 @@ Advanced fallback:
 Source "$VAULT/.env" before any API calls. The manifest is at $MANIFEST.
 
 Critical rules:
-- Atomic writes: always use Python read-modify-write for existing Inbox files.
 - Route-as-you-go: route every item and log it to the manifest immediately.
 - Dedup: before adding a task, check if it already exists in the target file.
 - Only create `- [ ]` tasks for clear next actions. Recaps and status updates are notes, not tasks.
@@ -58,11 +57,11 @@ Critical rules:
 
 Execute these steps in order:
 
-1. BRAIN DUMP TRIAGE: Read `Inbox/[YourCompany].md`. Extract the `## Brain Dump` section. Classify each item by client. Route work items to the correct client inbox file via atomic writes. Remove routed items from the Brain Dump. Leave personal items and ideas in place. Log every routed item to the manifest.
-2. CALL TRANSCRIPTS: If a transcript fetcher script exists (for example `scripts/fathom-fetch.py`), run it and parse the results. For each call, extract action items, decisions, and follow-ups. Route to client inbox files via atomic writes. Log to manifest. If no transcript service is configured, skip this step.
+1. BRAIN DUMP TRIAGE: Read `Inbox/[YourCompany].md`. Extract the `## Brain Dump` section. Classify each item by client. Route work items to the correct client inbox file. Remove routed items from the Brain Dump. Leave personal items and ideas in place. Log every routed item to the manifest.
+2. CALL TRANSCRIPTS: If a transcript fetcher script exists (for example `scripts/fathom-fetch.py`), run it and parse the results. For each call, extract action items, decisions, and follow-ups. Route to client inbox files. Log to manifest. If no transcript service is configured, skip this step.
 3. TOMORROW'S CALENDAR: Get a Google OAuth access token using the refresh token. Fetch $TOMORROW's events from Google Calendar API. Format as a readable schedule. Write to `/tmp/eod-calendar-$TODAY.md`.
-4. EMAIL CHECK: Reuse the Google OAuth token. Fetch today's emails via Gmail API (first 15-20 messages). Surface emails needing response. Route actionable items to client inbox files via atomic writes. Log to manifest.
-5. SLACK CHECK: For each workspace token in `.env` (`SLACK_TOKEN_WORKSPACE_*`), check unread DMs and mentions. Route items to client inbox files via atomic writes. Log to manifest.
+4. EMAIL CHECK: Reuse the Google OAuth token. Fetch today's emails via Gmail API (first 15-20 messages). Surface emails needing response. Route actionable items to client inbox files. Log to manifest.
+5. SLACK CHECK: For each workspace token in `.env` (`SLACK_TOKEN_WORKSPACE_*`), check unread DMs and mentions. Route items to client inbox files. Log to manifest.
 
 When done, read back `$MANIFEST` and confirm it exists and has entries. Report totals by source and client.
 
@@ -71,9 +70,6 @@ When done, read back `$MANIFEST` and confirm it exists and has entries. Report t
 ## 2. Sync
 
 Read the manifest at `$MANIFEST` for context on what was gathered.
-
-Critical rules:
-- Atomic writes for all Inbox file edits.
 
 Execute these steps:
 
