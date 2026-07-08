@@ -52,7 +52,7 @@ Run this automatically as part of every monthly review:
 
 **CLAUDE.md Self-Audit (run automatically every review):**
 Before asking the user anything, audit this file against reality:
-1. **Integrations**: For each listed integration, verify the connection is live (MCP: test call; API: check .env has a real credential). Flag dead connections and undocumented live ones.
+1. **Integrations**: For each listed integration, verify the connection is live (MCP: test call; API: check the credential is present in the environment or `.env`). Flag dead connections and undocumented live ones.
 2. **Scripts**: For each script listed under Local Tools, verify the file exists in the workspace. Flag missing scripts and undocumented scripts in `scripts/`.
 3. **Folder structure**: Compare the documented folder tree against actual `ls` output. Flag mismatches.
 4. **Skills**: Compare skills referenced in this file against files in `.claude/commands/`. Flag mismatches.
@@ -79,7 +79,7 @@ If the ClaudeCodeSystem setup repo folder still exists in the workspace outside 
 | Client profiles & archives | `Work/Clients/<Client>/Company Profile.md` + `Archive/` subfolder |
 | Call transcripts | Per-client: `Work/Clients/<Client>/Transcripts/`, admin: `Work/Transcripts/`, private: `[YourCompany]/Transcripts/` |
 | Task management | [Your Task Manager] (e.g., ClickUp via MCP) |
-| Credentials/API keys | `.env` (all secrets here; `Resources/API Keys/` has references only) |
+| Credentials/API keys | Environment variables set in the Claude Code environment settings (`.env` is a session-local, untracked fallback; `Resources/API Keys/` has references only) |
 | Work projects | `Work/Clients/` |
 | Personal projects | `Projects/Personal/` |
 | System updates | Change Log (bottom of this file) + `CHANGELOG.md` for full history |
@@ -110,7 +110,7 @@ I am your personal assistant built to handle the repetitive, organizational part
 - **CLAUDE.md (this file) is my instruction manual.** I read it every session to know how you want things done.
 - **Your .env file gives me login information for your tools.** Calendar, email, task manager, and other services are connected through passwords and keys stored there.
 - **Skills let me run multi-step processes with one instruction.** For example, `/morning` reviews your day and `/eod` closes it out. Skills are text files in `.claude/commands/` that I follow step by step. Your skills library grows over time as you turn successful tasks into reusable routines.
-- **I do not remember things between conversations unless they are written to a file.** If something is important, I save it to your notes or to my memory files.
+- **I do not remember things between conversations unless they are written to a file AND pushed.** The cloud workspace I run in is temporary: it starts from a fresh clone of the vault repository and is thrown away after the session. Anything not committed and pushed to the vault's Git remote is gone when the session ends. If something is important, I save it to your notes and push it.
 
 ### Guiding the User
 
@@ -162,9 +162,9 @@ Brain/
 
 (Built-in connections -- once set up, they just work. These are called "MCP servers" in technical documentation.)
 
-- If using **Claude Desktop** or **Claude CoWork**, set these up through the app's **Customize** section in settings. **Claude cannot configure these connections itself.** Only the user can add or remove direct connections through the **Customize** section. If a new connection is needed, tell [Your Name] what to connect and where to find it in the **Customize** section.
-- If using **Claude Code CLI**, set these up in Claude Code's local settings/config.
-- If using **both**, prefer the app UI for Desktop and only add CLI config for tools you need in terminal sessions.
+- Built-in connections (Gmail, Google Calendar, and other claude.ai connectors) are set up by [Your Name] through claude.ai's **Settings > Connectors** page. **Claude cannot configure these connections itself.** If a new connection is needed, tell [Your Name] what to connect and where to find it in the Connectors settings.
+- Self-configured MCP servers live in the vault's checked-in config (`.mcp.json` at the vault root), so they follow the repository into every cloud session. Only add or change them when [Your Name] explicitly asks.
+- Pre-approve connected tools by adding their `"mcp__...__*"` entries to `permissions.allow` in the vault's `.claude/settings.json` (also checked in).
 
 <!-- List your direct connections here. Remove or add lines for the tools you actually use. Common examples: -->
 <!-- - **ClickUp** -- Task/project management (spaces, folders, lists, tasks, docs) -->
@@ -241,7 +241,7 @@ When working in this vault:
 3. **ClickUp Status**: When marking tasks done in ClickUp, use the done-type status for that list (usually **"done"** or **"completed"**). Never use "closed". Different lists may have different done-status names; check the list's available statuses if unsure.
 -->
 4. **File Organization**: Follow the existing folder structure
-5. **Sensitive Data**: All credentials are stored in `.env`; never put raw keys in vault markdown files. `Resources/API Keys/` contains reference pointers only
+5. **Sensitive Data**: Credentials come from environment variables configured in the Claude Code environment settings (a session-local `.env` may mirror them for scripts, but it is untracked and disposable). Never put raw keys in vault markdown files and never commit secrets to the repository. `Resources/API Keys/` contains reference pointers only
 6. **Context Awareness**: Read relevant notes before making decisions
 7. **Proactive Assistance**: Suggest improvements, identify patterns, and help optimize workflows
 8. **Timezone Handling**: All times should be interpreted and displayed in **[Your Timezone]**. When querying APIs that return ISO timestamps (typically UTC), convert to your local timezone before reporting dates/times. Evening UTC times may appear as the next day if not converted properly.
@@ -265,8 +265,8 @@ When working in this vault:
     3. **Claude.ai managed connection** -- If no API is available but Claude.ai has a built-in integration for the service (Gmail, Google Calendar, etc. via the Claude.ai Integrations page), use that.
     4. **Ask [Your Name]** -- If none of the above work, tell [Your Name] what access you need. They may be able to get you API credentials or enable a connection. Do not try to work around it.
     Never use browser automation (agent-browser, Playwright, Puppeteer, or any headless browser tool). Never fall back to a browser to work around a blocked page, missing API, or 403 error. If a service has no API and no Claude.ai integration, it is not connected yet -- say so and ask how [Your Name] wants to handle it.
-    **Never configure direct connections (MCP servers) yourself.** If [Your Name] is using Claude Desktop or Claude CoWork, direct connections can only be added through the app's UI by the user. Do not attempt to write `mcpServers` configuration, edit settings files for MCP, or instruct yourself to set up a new MCP connection. Instead, tell [Your Name] what tool to connect and where to find it in the app settings. If [Your Name] uses the Claude Code CLI, MCP config in `~/.claude/settings.json` is valid but only when explicitly requested.
-18. **Script-First for API Calls**: Do not write raw curl commands inline for API interactions. Instead, create a reusable Python script in `scripts/` for any API call that will be used more than once. Scripts must: source credentials from `.env`, handle errors and non-200 responses gracefully, support `--json` output for machine-readable results, include a `--help` flag, and log what they did. If a script already exists for the task, use it. This makes API interactions consistent, testable, and debuggable instead of fragile one-liners that break silently. One-off exploratory API calls (testing an endpoint, checking a value) are fine as inline curl, but anything that runs in a skill or will be repeated should be a script.
+    **Never configure direct connections (MCP servers) yourself.** Built-in connectors (Gmail, Google Calendar, etc.) can only be added by [Your Name] through claude.ai's **Settings > Connectors** page. Do not attempt to write `mcpServers` configuration, edit MCP config files, or instruct yourself to set up a new MCP connection on your own initiative. Instead, tell [Your Name] what tool to connect and where to add it. Editing the vault's `.mcp.json` is valid only when [Your Name] explicitly requests it.
+18. **Script-First for API Calls**: Do not write raw curl commands inline for API interactions. Instead, create a reusable Python script in `scripts/` for any API call that will be used more than once. Scripts must: source credentials from environment variables (falling back to `.env` if present), handle errors and non-200 responses gracefully, support `--json` output for machine-readable results, include a `--help` flag, and log what they did. If a script already exists for the task, use it. This makes API interactions consistent, testable, and debuggable instead of fragile one-liners that break silently. One-off exploratory API calls (testing an endpoint, checking a value) are fine as inline curl, but anything that runs in a skill or will be repeated should be a script.
 19. **Self-Updating Documentation**: Every time a new integration, tool, or script is added to the system, immediately update ALL relevant references:
     - **CLAUDE.md**: Add the integration under the appropriate section (Direct Connections, Tools That Need Login Credentials, or Local Tools). Include what it does, how to use it, and any key details.
     - **`Resources/Reference/API Integration Guide.md`**: Add endpoint documentation, auth method, example calls, rate limits, and any gotchas discovered during setup.
@@ -275,6 +275,7 @@ When working in this vault:
     - **Skills**: If any skills reference integrations (like `/eod-gather`), update them to include the new integration where appropriate.
     Do not consider an integration "done" until all of these references are updated. If you add an API and skip the documentation, the next session will not know it exists.
 20. **Graph Navigation**: Always start from `Graph/index.md` or the relevant domain MOC (e.g., `Graph/Clients.md`, `Graph/People.md`, `Graph/Projects.md`, `Graph/Concepts.md`, `Graph/SOPs.md`) when searching for context. Follow wiki-links before resorting to folder browsing or grep. When updating files, maintain inline wiki-links and frontmatter. Consult `Graph/entity-registry.md` for the list of linkable entities. If `Graph/` is empty or MOCs are missing, run `/graph-sync` to populate it.
+21. **Persistence -- commit and push before ending**: The cloud workspace is temporary; Git is the durability layer. At the end of any command or task that changed vault files -- and before any session winds down with changes on disk -- run `git add -A`, commit with a short descriptive message, and `git push` (on rejection: `git pull --rebase`, then push again). If a push fails, say so plainly instead of ending the session as if the work were safe. Skills like `/eod`, `/morning`, and `/handoff` have this as an explicit final step; the rule applies to ad-hoc work too.
 
 ## Common Workflows
 
@@ -324,6 +325,7 @@ The default `/eod` flow covers:
 - Daily note: generate `Work/Daily/YYYY-MM-DD.md`
 - Tomorrow's plan: generate `Inbox/Today.md` with schedule, priorities, and meeting prep
 - Graph sync: incremental knowledge graph update on files changed today (frontmatter, wiki-links, index/MOC updates)
+- Persist: commit and push the vault (the workspace is temporary; an unpushed close-out is lost when the session ends)
 
 Write important state to disk as you go (manifest files, inbox files, temp files in `/tmp/`). If the workflow later needs more resilience or starts hitting practical limits, split it into phases and pass state between them through files.
 
@@ -338,7 +340,7 @@ When you need to call an external API (Gmail, Slack, Google Drive, etc.) for any
 1. **Check `scripts/` first** -- a script may already exist for this API
 2. **Create a new script** in `scripts/` if one does not exist:
    - Name it descriptively: `gmail-check.py`, `slack-scan.py`, `calendar-fetch.py`
-   - Source credentials from `.env` (never hardcode keys)
+   - Source credentials from environment variables, falling back to `.env` if present (never hardcode keys)
    - Accept relevant parameters via command-line arguments (dates, filters, limits)
    - Handle errors: check HTTP status codes, catch exceptions, print clear error messages
    - Support `--json` flag for machine-readable output (so skills can parse results)

@@ -13,11 +13,7 @@
       "mcp__context7__*"
     ],
     "additionalDirectories": [
-      "/private/tmp",
-      "$HOME/Desktop",
-      "$HOME/Downloads",
-      "$HOME/Library/LaunchAgents",
-      "$HOME/scripts"
+      "/tmp"
     ]
   },
   "alwaysThinkingEnabled": true,

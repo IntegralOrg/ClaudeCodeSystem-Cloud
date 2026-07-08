@@ -7,9 +7,6 @@
 .DS_Store
 ._*
 
-# Obsidian
-.obsidian/
-
 # Claude Code (ignore everything except commands/)
 .claude/*
 !.claude/commands/

@@ -180,3 +180,13 @@ Graph Sync Complete -- YYYY-MM-DD
   Orphans: N
   Duration: Xm
 ```
+
+---
+
+## Final Step: Persist to Git
+
+Commit and push the rebuilt graph -- the workspace is temporary, and an unpushed rebuild is lost when the session ends:
+
+`git add -A && git commit -m "Graph sync YYYY-MM-DD" && git push`
+
+If the push is rejected because the remote moved, run `git pull --rebase`, then push again.

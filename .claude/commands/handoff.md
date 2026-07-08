@@ -1,6 +1,8 @@
 # Handoff
 
-Hand off the current conversation to a fresh Claude Code session (new window, post-clear, or after context compaction). Writes a self-contained briefing to `.handoffs/<name>.md` that a new agent can read cold and continue the work without losing momentum.
+Hand off the current conversation to a fresh Claude Code session (new window, post-clear, after context compaction, or a brand-new cloud session). Writes a self-contained briefing to `.handoffs/<name>.md` that a new agent can read cold and continue the work without losing momentum.
+
+**Cloud rule: a handoff that is not pushed does not exist.** Each cloud session runs in a temporary workspace that starts from a fresh clone of the vault repository. The next session can only read this handoff if it was committed and pushed (Step 3.5). The same goes for any other unsaved work sitting in the workspace.
 
 **Required argument:** a short name for the handoff (e.g., `/handoff trussi-workflow-fix`). This becomes the filename. Use kebab-case or short descriptive words. Spaces are converted to hyphens automatically.
 
@@ -60,7 +62,7 @@ Run these in parallel and include relevant output in the handoff:
 - `date` -- timestamp the handoff
 - `pwd` -- capture the current working directory so the next session knows where to operate
 - `git status` and `git log --oneline -5` -- if relevant files are in a git repo, capture uncommitted state and recent commits
-- Check for any running background processes the next agent will inherit (builds, dev servers, long-running tasks)
+- Check for any running background processes (builds, dev servers, long-running tasks). A new session does NOT inherit them -- the workspace is torn down between sessions -- so record what was running and how to restart it, not just that it exists
 - If work touches a specific file, note its current length and any in-progress edits
 
 ## Step 3: Write the Handoff File
@@ -70,7 +72,7 @@ Write to `.handoffs/HANDOFF_NAME.md` in the current working directory. Use this 
 ```markdown
 # Handoff -- [Topic] -- [YYYY-MM-DD HH:MM ET]
 
-> **For the next Claude reading this:** The user cleared context or opened a new window. You are continuing work mid-stream. Read this entire file before taking any action. Then pull the context listed in "Load This Context" before responding. Do not ask the user to re-explain what is already documented here.
+> **For the next Claude reading this:** The user cleared context, opened a new window, or started a new cloud session. You are continuing work mid-stream. Read this entire file before taking any action. Then pull the context listed in "Load This Context" before responding. Do not ask the user to re-explain what is already documented here.
 
 **Working directory:** `[cwd from pwd]`
 **Project context:** [e.g., "Brain vault", "DevProjects/agent-browser", "none"]
@@ -125,12 +127,24 @@ Run these reads/commands in parallel at the start of your response, before sayin
 *Handoff written [timestamp]. Session topic: [topic]. If this file is older than a few hours when you read it, verify it's still current before acting on it; state may have changed.*
 ```
 
+## Step 3.5: Persist the Handoff (required)
+
+The handoff must reach the vault's Git remote, or the next session will never see it:
+
+1. `git add .handoffs/HANDOFF_NAME.md`
+2. `git commit -m "Handoff: HANDOFF_NAME"`
+3. `git push` -- if the push is rejected because the remote moved, run `git pull --rebase`, then push again
+
+Then check `git status` for **other** uncommitted changes. If there are any, tell the user plainly: uncommitted work will not survive this session. Offer to commit and push it too. Finished work belongs in the same push; half-done changes the user does not want on the main branch can go on a WIP branch (`git checkout -b wip/HANDOFF_NAME`, commit, `git push -u origin wip/HANDOFF_NAME`) -- and record that branch name in the handoff's "Where We Are Right Now" section. Do not silently leave unpushed changes behind.
+
+If the push fails after a retry, say so explicitly: the handoff exists only in this temporary workspace until a push succeeds.
+
 ## Step 4: Confirm With the User
 
-After writing the file, show a compact summary:
+After writing and pushing the file, show a compact summary:
 
 ```
-Handoff saved: .handoffs/HANDOFF_NAME.md
+Handoff saved and pushed: .handoffs/HANDOFF_NAME.md
 
   Goal: [one line]
   Next steps: [1-line summary of first next action]
@@ -146,7 +160,7 @@ Do not dump the full file content into the chat. The user can read it if they wa
 
 ## Notes on Using This
 
-- **When to run**: Before `/clear`, before closing a window mid-task, or when context is getting long and you want a checkpoint before compaction.
+- **When to run**: Before `/clear`, before ending a cloud session mid-task, before closing a window, or when context is getting long and you want a checkpoint before compaction.
 - **Named and persistent**: Each handoff gets its own file in `.handoffs/`. You can have many active handoffs across different workstreams. Old handoffs stick around until manually deleted.
 - **Not a replacement for EOD**: This is for mid-stream work handoffs, not end-of-day wrap-ups. Your `/eod` still routes items to your task inboxes and builds tomorrow's plan.
 - **Not a replacement for tasks**: Ongoing project state belongs in your task manager or client inbox files. Handoff is for the immediate thread of work the current session is in the middle of.

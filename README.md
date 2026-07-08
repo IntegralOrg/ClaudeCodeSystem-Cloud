@@ -86,7 +86,7 @@ By the end of all 4 steps, you will have (see the [Onboarding Guide](docs/onboar
 ClaudeCodeSystem/
 ├── CLAUDE.md                           # Bootstrap file (tells Claude how to start setup)
 ├── README.md                           # This file
-├── .claude/commands/                   # ALL Claude Code CLI slash commands (auto-discovered; every one installs during /onboard)
+├── .claude/commands/                   # ALL Claude Code slash commands (auto-discovered; every one installs during /onboard)
 │   ├── onboard.md                      # Part 1: Permissions, interview, build vault
 │   ├── train.md                        # Part 2: Learn the system
 │   ├── connect.md                      # Part 3: Connect all your tools
@@ -116,14 +116,11 @@ ClaudeCodeSystem/
 ├── templates/
 │   ├── CLAUDE.md                       # Starting CLAUDE.md template (customized by /onboard)
 │   └── .env.example                    # All env var names with descriptions
-├── examples/                           # Optional CLI settings + advanced automation (NOT commands)
-│   ├── settings.json                   # CLI example: global Claude Code settings
-│   ├── settings.local.json             # CLI example: project-level permissions
+├── examples/                           # Example settings + optional scripts (NOT commands)
+│   ├── settings.json                   # Example: baseline Claude Code permissions
+│   ├── settings.local.json             # Example: project-level permissions
 │   └── scripts/
-│       ├── md-to-gdoc.py               # Markdown to Google Doc converter
-│       ├── eod-runner.sh               # (Advanced) EOD phase orchestrator for cron
-│       ├── eod-cron.sh                 # (Advanced) Cron wrapper with version pinning
-│       └── com.brain.eod-runner.plist  # (Advanced) launchd config for nightly schedule
+│       └── md-to-gdoc.py               # Markdown to Google Doc converter
 ├── .gitignore
 └── LICENSE                             # CC BY-NC-ND 4.0
 ```
@@ -146,13 +143,13 @@ The instruction file at your vault root. Claude reads it automatically every ses
 Successful tasks turned into repeatable routines. Each skill is a text file that defines a multi-step workflow. Type `/skill-name` and Claude runs the full process. Examples: `/eod-gather` (collect all daily data), `/morning` (interactive morning review), `/audit-deliver` (populate a client portal). Your skills library grows over time as you turn successful one-off tasks into reusable routines.
 
 **Two formats exist for different runtimes:**
-- **Claude Code (CLI):** Skills live in `.claude/commands/` and are auto-discovered. No special formatting needed.
+- **Claude Code:** Skills live in `.claude/commands/` and are auto-discovered. No special formatting needed.
 - **Claude CoWork:** Skills require YAML frontmatter (`name:` and `description:` fields in a `---` block) and must be manually uploaded through the **Customize** section in the app settings. The `cowork-commands/` directory contains pre-formatted versions of all skills ready for upload.
 
 ### Session Continuity (`/handoff` and `/pickup`)
 Every user gets these two commands. They solve the single biggest limitation of working with an AI agent: a session's memory is finite. When the context window fills up, or you run `/clear`, close the window, or the conversation gets compacted, everything that was only "in the chat" is gone.
 
-- **`/handoff <name>`** writes a self-contained briefing to `.handoffs/<name>.md`: the goal, what's been done, what was tried and rejected, the exact next steps, and which files and commands the next session should reload. Run it before `/clear`, before closing a window mid-task, or whenever a long conversation is getting unwieldy. The handoff is written *to the next Claude*, not to you, so it reads like a briefing for a colleague who just walked in.
+- **`/handoff <name>`** writes a self-contained briefing to `.handoffs/<name>.md` -- the goal, what's been done, what was tried and rejected, the exact next steps, and which files and commands the next session should reload -- then **commits and pushes it** (cloud sessions start from a fresh clone, so an unpushed handoff would never reach the next one). Run it before `/clear`, before ending a session mid-task, or whenever a long conversation is getting unwieldy. The handoff is written *to the next Claude*, not to you, so it reads like a briefing for a colleague who just walked in.
 - **`/pickup [name]`** (in the next session) reads that file, reloads the listed context in parallel, sanity-checks it against the current state of the repo, and reports back where you left off, all without you re-explaining anything. With no argument it lists the available handoffs and asks which to resume.
 
 Because each handoff is a named, persistent file inside the vault, they accumulate into a **track record of in-flight workstreams**: you can keep several open across different projects, and old ones stay put until you delete them. This is better task and context management than holding everything in one long chat. Use it for mid-stream work; `/eod` still handles end-of-day wrap-up and routing items to your task inboxes.
@@ -189,7 +186,7 @@ The system is designed for one person. You could adapt it for a small team, but 
 If you are using the default one-command `/eod`, just run it again after fixing the issue. If you later adopt the advanced phased version, you can re-run only the failed phase.
 
 **Can I automate the EOD to run on a schedule?**
-Yes, for power users. The `examples/scripts/` folder includes a shell orchestrator, cron wrapper, and launchd plist for running `/eod` automatically at a set time (e.g., 11:30 PM weekdays). This requires some terminal setup. Most users just run `/eod` manually before wrapping up for the day.
+Yes. Create a scheduled [Routine](https://code.claude.com/docs/en/routines) in Claude Code on the web: point it at your vault repository with the prompt `/eod` and a schedule like 11:30 PM on weekdays. It runs in the cloud and pushes the results, so tomorrow's plan is ready when you sit down -- no computer left on, no cron jobs, no terminal setup. Most users still just run `/eod` manually before wrapping up for the day.
 
 ## License
 

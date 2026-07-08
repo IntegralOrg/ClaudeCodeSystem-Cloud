@@ -218,6 +218,16 @@ If no meetings: "No meetings today. Full deep work runway. [Top priority] starts
 
 ---
 
+## Final Step: Persist to Git
+
+If any vault files changed during the review (Today.md edits, goal updates, inbox changes), commit and push before finishing:
+
+`git add -A && git commit -m "Morning review YYYY-MM-DD" && git push`
+
+The vault runs in a temporary cloud workspace; unpushed changes are lost when the session ends. If the push is rejected because the remote moved, run `git pull --rebase`, then push again. If nothing changed, skip this silently.
+
+---
+
 ## Notes
 
 - Use `AskUserQuestion` for ALL interaction points. Never just ask a question in text and wait for the user to type. Every decision point must use selectable options.

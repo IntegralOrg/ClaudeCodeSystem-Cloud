@@ -18,8 +18,8 @@ The user is running **Claude Code on the web** (that was recorded in CLAUDE.md d
 
 Connection rules:
 - **Built-in integrations** (Gmail, Google Calendar, ClickUp, etc.) must be connected by the user through the **Customize** / connectors section of Claude Code on the web. **Claude cannot create or modify those connections itself.** Never try to set one up on the user's behalf. If a new integration is needed, tell the user what to connect and where to find it in the **Customize** section.
-- **Workspace settings files** are real and editable: after an integration or MCP server is connected, add its `"mcp__...__*"` entry to the `permissions.allow` array in `~/.claude/settings.json`. Self-configured MCP servers can be added to `mcpServers` there too.
-- **API-based integrations** (credentials in `.env`, called with curl or scripts) work directly in the workspace. `.env` is the home for all API keys.
+- **Permissions and MCP config live in the vault repository** so they survive between cloud sessions: pre-approve connected tools by adding `"mcp__...__*"` entries to `permissions.allow` in the vault's `.claude/settings.json` (committed), and define self-configured MCP servers in the vault's `.mcp.json` (also committed -- reference secrets as `${ENV_VAR}` placeholders, never paste raw values into a committed file).
+- **API-based integrations** (called with curl or scripts) work directly in the workspace. Credentials go in `.env` for the current session, but `.env` is untracked and the workspace is temporary -- the **permanent** home for every credential is an environment variable in the Claude Code **environment settings**. Whenever you save a key to `.env`, also walk the user through adding it there so future sessions have it.
 
 Before connecting any tools, verify the workspace has what we need. Run these checks silently and only surface issues.
 
@@ -139,7 +139,7 @@ Options:
 
 6. Repeat for **Gmail** if they want email connected.
 
-7. Update permissions in `~/.claude/settings.json`, adding `"mcp__claude_ai_Google_Calendar__*"` and/or `"mcp__claude_ai_Gmail__*"` to the allow list. (The connection itself lives in the **Customize** section -- this just pre-approves the tools so Claude does not have to ask every time.)
+7. Update permissions in the vault's `.claude/settings.json`, adding `"mcp__claude_ai_Google_Calendar__*"` and/or `"mcp__claude_ai_Gmail__*"` to the allow list. (The connection itself lives in the **Customize** section -- this just pre-approves the tools so Claude does not have to ask every time.)
 
 8. Test the connection:
 - "Let me pull up your calendar to make sure it is working..."
@@ -354,7 +354,7 @@ Walk through every step:
 
 **Built-in integration (check this first):**
 - Check whether ClickUp is available in the **Customize** / connectors section of Claude Code on the web.
-- If yes, walk the user through connecting it there. **Only the user can add it** -- do not try to configure the built-in integration yourself. Once connected, add the matching `"mcp__...__*"` entry to the `permissions.allow` array in `~/.claude/settings.json`, then skip straight to the connection test below -- no API token needed.
+- If yes, walk the user through connecting it there. **Only the user can add it** -- do not try to configure the built-in integration yourself. Once connected, add the matching `"mcp__...__*"` entry to the `permissions.allow` array in the vault's `.claude/settings.json`, then skip straight to the connection test below -- no API token needed.
 - If no built-in integration exists, use a workspace MCP server (below) or fall back to the API-based integration. Both of those need an API token, so collect one now (step 2).
 
 2. **Collect the API token (only for the MCP-server or API-fallback paths).**
@@ -382,7 +382,7 @@ CLICKUP_API_KEY=<token>
 ```
 
 **Workspace MCP server (if there is no built-in integration, or it does not work):**
-- Read `~/.claude/settings.json`. Add a `mcpServers` block for ClickUp (merge with existing mcpServers if any):
+- Read the vault's `.mcp.json` (create it at the vault root if missing). Add a `mcpServers` block for ClickUp (merge with existing mcpServers if any). This file is committed with the vault, so the server definition persists across cloud sessions:
 
 ```json
 {
@@ -400,16 +400,16 @@ CLICKUP_API_KEY=<token>
 - `npx -y @anthropic/mcp-remote https://mcp.clickup.com/s/<connection_id>` (ClickUp's hosted MCP)
 - `npx -y clickup-mcp-server` (community package with `CLICKUP_API_KEY` env var)
 
-Also add `"mcp__clickup__*"` to the `permissions.allow` array in `~/.claude/settings.json`.
+Also add `"mcp__clickup__*"` to the `permissions.allow` array in the vault's `.claude/settings.json`.
 
-If using an API-key-based server, pass the key via the env block:
+If using an API-key-based server, pass the key via the env block **as a placeholder, never the raw value** (`.mcp.json` is committed; the real value lives in the Claude Code environment settings):
 ```json
 {
   "clickup": {
     "command": "npx",
     "args": ["-y", "clickup-mcp-server"],
     "env": {
-      "CLICKUP_API_KEY": "<their token>"
+      "CLICKUP_API_KEY": "${CLICKUP_API_KEY}"
     }
   }
 }
@@ -582,14 +582,14 @@ For tools not covered above (Asana, Trello, Todoist, Teams, Otter, Fireflies, To
 
 **If a built-in integration exists in Claude Code on the web:**
 1. Tell the user which integration to add and walk them through finding it in the **Customize** / connectors section. **Do not attempt to configure this yourself** -- only the user can add built-in integrations through the **Customize** section.
-2. Once they confirm it is connected, add `"mcp__toolname__*"` to the `permissions.allow` array in `~/.claude/settings.json`, then test with a lightweight tool call
+2. Once they confirm it is connected, add `"mcp__toolname__*"` to the `permissions.allow` array in the vault's `.claude/settings.json`, then test with a lightweight tool call
 3. Update CLAUDE.md integrations section
 
 **If no built-in integration exists but an MCP server does:**
 1. Search for the install command (usually `npx -y @some-org/mcp-server-toolname`)
 2. Walk the user through getting credentials (API key, OAuth token, etc.)
-3. Save credentials to `.env`
-4. Add the `mcpServers` entry to `~/.claude/settings.json`:
+3. Save credentials to `.env` for this session AND as an environment variable in the Claude Code environment settings (the permanent copy)
+4. Add the `mcpServers` entry to the vault's `.mcp.json` (committed -- use `${...}` placeholders for secrets):
    ```json
    {
      "mcpServers": {
@@ -597,20 +597,20 @@ For tools not covered above (Asana, Trello, Todoist, Teams, Otter, Fireflies, To
          "command": "npx",
          "args": ["-y", "@some-org/mcp-server-toolname"],
          "env": {
-           "TOOL_API_KEY": "<value from .env>"
+           "TOOL_API_KEY": "${TOOL_API_KEY}"
          }
        }
      }
    }
    ```
-5. Add `"mcp__toolname__*"` to the `permissions.allow` array in `~/.claude/settings.json`
+5. Add `"mcp__toolname__*"` to the `permissions.allow` array in the vault's `.claude/settings.json`
 6. Test with a lightweight MCP tool call
 7. Update CLAUDE.md integrations section (add to "Direct Connections")
 
 **If no usable built-in integration or MCP server exists:**
 1. Search for the tool's REST API documentation
 2. Walk the user through getting an API key or personal access token
-3. Save to `.env`
+3. Save to `.env` for this session AND as an environment variable in the Claude Code environment settings (the permanent copy)
 4. Test with a curl call
 5. Update CLAUDE.md integrations section (add to "Tools That Need Login Credentials")
 
@@ -627,10 +627,10 @@ When all tools are connected (or explicitly skipped):
 
 ### Verify integration setup
 
-Read `~/.claude/settings.json` and confirm:
-1. Every workspace-configured MCP server has an entry in `mcpServers`
+Read the vault's `.claude/settings.json` and `.mcp.json` and confirm:
+1. Every workspace-configured MCP server has an entry in `.mcp.json`'s `mcpServers`
 2. Every connected MCP server and built-in integration has a matching `"mcp__servername__*"` entry in `permissions.allow`
-3. No placeholder values remain (no `your_...` or `<token>` strings in env blocks)
+3. No raw secrets are pasted into either committed file -- env blocks reference `${ENV_VAR}` placeholders whose real values live in the Claude Code environment settings
 
 If anything is missing, fix it now.
 
@@ -639,6 +639,7 @@ If anything is missing, fix it now.
 Read the vault's `.env` and confirm:
 1. Every API-based tool has its credential filled in (not placeholder)
 2. No commented-out credentials for tools that were successfully connected
+3. Every credential in `.env` is ALSO saved as an environment variable in the Claude Code environment settings (ask the user to confirm -- a value that exists only in `.env` is gone when this workspace is recycled)
 
 ### Verify CLAUDE.md
 

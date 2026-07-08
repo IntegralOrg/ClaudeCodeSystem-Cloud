@@ -177,3 +177,15 @@ After all sections complete, print the final summary:
    - Tomorrow's plan: `Inbox/Today.md` generated for `$TOMORROW`
    - Errors: list any integration or section failures
 3. Print tomorrow's top 3 priorities from the generated `Today.md`
+
+---
+
+## Final Step: Persist to Git
+
+The vault runs in a temporary cloud workspace -- anything not pushed is lost when the session ends. After printing the summary:
+
+1. `git add -A`
+2. `git commit -m "EOD close-out $TODAY"`
+3. `git push` -- if the push is rejected because the remote moved, run `git pull --rebase`, then push again
+
+If the working tree is clean, say so and skip the commit. If the push still fails after a retry, tell the user plainly: tonight's close-out exists only in this workspace until a push succeeds.
