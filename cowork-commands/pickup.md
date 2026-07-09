@@ -19,6 +19,8 @@ Name: $ARGUMENTS
 
 Handoffs live in `.handoffs/<name>.md` relative to the current working directory (this is where `/handoff` writes them).
 
+**First, sync with the remote.** A cloud workspace clones the vault when the session starts; a handoff pushed after that moment (for example, from a session that just ended) may not be in this clone yet. Run `git pull` before listing or reading handoffs. If the pull fails, note it and continue with what is on disk.
+
 **If `$ARGUMENTS` is provided:**
 
 Sanitize it the same way `/handoff` does: lowercase, replace spaces with hyphens, strip special characters except hyphens and underscores. This is `HANDOFF_NAME`. The target file is `.handoffs/HANDOFF_NAME.md`.
@@ -64,7 +66,7 @@ Parse the `## Load This Context Before Responding` section of the handoff file. 
 
 - **Read:** entries -- use the Read tool on the exact path (and line range if given)
 - **Bash:** entries -- run via Bash tool
-- **Check memory:** entries -- Read the file from the memory directory for the project named in the handoff's "Working directory" line. The path follows the pattern `~/.claude/projects/<escaped-cwd>/memory/[filename]`, where `<escaped-cwd>` is the working directory with slashes and dots replaced by hyphens.
+- **Check memory:** entries -- in the cloud edition, durable memory lives in the vault itself (CLAUDE.md, `Graph/`, notes files), so read the vault file the entry points to. If a handoff written by an old local-CLI session references `~/.claude/projects/<escaped-cwd>/memory/[filename]`, that directory does not exist in a fresh cloud workspace -- note it as unavailable and rely on the vault files listed instead.
 - **Grep/Glob:** entries -- use the appropriate tool
 
 Run all independent reads/commands **in parallel** in a single tool-call block. Do not serialize them.
@@ -78,7 +80,7 @@ The handoff is a snapshot. Before trusting it, verify the parts that could have 
 - If the handoff references uncommitted git state, run `git status` and compare
 - If it references a file at a specific line number, confirm the line numbers still match after your Read
 - If it says "waiting on the user to decide X", note that the question is still open
-- If it says something is "running in the background", check whether it actually still is
+- If it says something was "running in the background", it is not running anymore -- a fresh cloud session inherits no processes from the previous one. Plan to restart it (the handoff should say how)
 
 If reality diverges from the handoff in a way that affects the next steps, flag it in your summary.
 

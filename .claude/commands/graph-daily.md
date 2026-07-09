@@ -85,3 +85,13 @@ Write a brief sync report to `/tmp/eod-graph-YYYY-MM-DD.md` so the daily note ca
 ```
 Graph sync: N files processed, N links added, N takeaways extracted, N index entries added
 ```
+
+---
+
+## Final Step: Persist to Git (standalone runs)
+
+When run standalone -- not as part of `/eod`, which pushes once at the end of the full pipeline -- commit and push the graph updates:
+
+`git add -A && git commit -m "Graph daily sync YYYY-MM-DD" && git push`
+
+If the working tree is clean after the sync, say so and skip the commit/push. If the push is rejected because the remote moved, run `git pull --rebase`, then push again.

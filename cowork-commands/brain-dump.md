@@ -57,3 +57,13 @@ Manual brain dump command. The user dictates everything on their mind and the as
    - Item description | Client | Type | Routed To
 2. Call out any items left unrouted or flagged for user decision
 3. Print totals: tasks created, notes filed, ideas saved, personal items parked
+
+---
+
+## Step 6: Persist to Git
+
+Routed items only survive this cloud session if they are pushed:
+
+`git add -A && git commit -m "Brain dump YYYY-MM-DD" && git push`
+
+If the working tree is clean after routing (everything deduped away), say so and skip the commit/push. If the push is rejected because the remote moved, run `git pull --rebase`, then push again. Report "pushed" (or the failure, plainly) as the last line of the summary.

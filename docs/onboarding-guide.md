@@ -37,13 +37,13 @@ Built-in integrations (like Gmail or Google Calendar) are connected through the 
 
 ## Step 2: Give Claude Permission to Help You
 
-Before Claude can do anything, it needs permission to read and write files, run commands, and connect to your tools. There are two permission files: one for global settings (applies across your workspace) and one for local settings (applies only inside your vault).
+Before Claude can do anything, it needs permission to read and write files, run commands, and connect to your tools. In the cloud edition there is one file that matters: **your vault's `.claude/settings.json`**. It is committed to the vault repository, so every session -- today's and every future one -- starts with the same permissions automatically. (`/onboard` writes it for you; the reference below is for doing it by hand.)
 
-**Important:** direct connections (MCP servers) are configured by you through the **Customize** / connectors section of Claude Code on the web -- Claude cannot set these up itself. `.env` still works for API-based tools and scripts.
+**Important:** direct connections (MCP servers) are configured by you through the **Customize** / connectors section of Claude Code on the web -- Claude cannot set these up itself. Self-configured MCP servers go in the vault's `.mcp.json`. `.env` still works for API-based tools and scripts within a session.
 
-### Global Settings
+### Vault Settings
 
-This file lives at `~/.claude/settings.json` (in the `.claude` folder of your workspace). It controls what Claude can do across your workspace.
+This file lives at `.claude/settings.json` inside your vault. Because it travels with the repository, it is the durable copy of your permissions.
 
 Copy and paste this into the file:
 
@@ -59,15 +59,13 @@ Copy and paste this into the file:
       "Write",
       "NotebookEdit",
       "Bash(*)",
+      "Read(/tmp/**)",
       "WebSearch",
+      "WebFetch(*)",
       "mcp__context7__*"
     ],
     "additionalDirectories": [
-      "/private/tmp",
-      "$HOME/Desktop",
-      "$HOME/Downloads",
-      "$HOME/Library/LaunchAgents",
-      "$HOME/scripts"
+      "/tmp"
     ]
   },
   "alwaysThinkingEnabled": true,
@@ -87,48 +85,26 @@ Copy and paste this into the file:
 | `Write` | Claude can create new files |
 | `NotebookEdit` | Claude can work with notebook files |
 | `Bash(*)` | Claude can run terminal commands |
+| `Read(/tmp/**)` | Claude can read temporary files |
 | `WebSearch` | Claude can search the web for current information |
+| `WebFetch(*)` | Claude can visit web pages to get information |
 | `mcp__context7__*` | Claude can look up documentation |
 
 **Adding more tools:** Each tool Claude connects to needs its own permission line. When you run `/connect`, Claude adds these automatically. The pattern is always `mcp__` followed by the tool name and `__*`. For example, if you connect ClickUp, Claude adds `"mcp__clickup__*"` to the allow list. If you connect Gmail or Google Calendar, Claude adds lines like `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the allow list.
 
 **Additional directories** are folders outside your vault that Claude can access.
 
-### Local Settings
+### What about the other settings files?
 
-This file lives at `.claude/settings.local.json` inside your notes folder (the vault). It controls what Claude can do when working in that specific folder.
-
-Copy and paste this into the file:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(*)",
-      "Read(/tmp/**)",
-      "WebSearch",
-      "WebFetch(*)"
-    ]
-  }
-}
-```
-
-**What each permission means:**
-
-| Permission | What it allows |
-|---|---|
-| `Bash(*)` | Claude can run terminal commands |
-| `Read(/tmp/**)` | Claude can read temporary files |
-| `WebSearch` | Claude can search the web for current information |
-| `WebFetch(*)` | Claude can visit web pages to get information |
-
-You do not need to duplicate permissions from the global file here. The global settings already cover file reading, editing, writing, and tool connections.
+Claude Code documentation also mentions `~/.claude/settings.json` (in the workspace home folder) and `.claude/settings.local.json` (untracked local settings). Both are **session-local in the cloud edition**: the workspace is recycled between sessions, so anything that lives only in them disappears. Keep your permissions in the vault's committed `.claude/settings.json` and you never have to think about it again.
 
 ---
 
 ## Step 3: Create Your Notes Folder (Vault)
 
 Your vault is a Git repository of plain Markdown files that Claude reads and writes directly in your cloud workspace. Plain text means your notes stay portable and readable for decades, and Git keeps a full history so nothing is ever lost.
+
+The vault gets its **own private GitHub repository** (separate from this setup repo). The repository is what persists: each cloud session opens a fresh copy of it, and commands commit and push your changes back when they finish. `/onboard` walks you through creating the repo and pushes everything at the end of setup -- until that first push, the vault exists only in the temporary workspace.
 
 ### Create Your Starter Folders
 
@@ -269,7 +245,7 @@ Plain-language definitions for terms you will see in the documentation.
 | **MCP server** | A direct connection between Claude and a tool (like ClickUp or Google Calendar). Once set up, Claude can use the tool without going through a browser. |
 | **API** | A way for software to talk to other software. When Claude "calls an API," it is asking another service for information or telling it to do something. |
 | **OAuth** | A secure login handshake. Instead of giving Claude your password, OAuth lets you approve access once and Claude gets a special key to use going forward. |
-| **.env file** | Your password keychain file. A text file that stores all the login information Claude needs for your tools. It stays in your workspace and is never committed to the repository. |
+| **.env file** | Your password keychain scratch file. A text file that holds login information for the current session only -- it is never committed to the repository, and it does not survive between sessions. The permanent copies of your credentials are environment variables in your Claude Code environment settings. |
 | **Manifest** | A tracking list. During long processes, Claude writes down every item it finds so nothing gets lost. |
 | **EOD pipeline** | The end-of-day routine. A multi-step process that collects everything from your day and builds tomorrow's plan. |
 | **Sub-agent** | A separate Claude session launched from within your current session. The `/eod` command uses sub-agents so each phase gets a fresh context window. You do not need to do anything special; it happens automatically when you run `/eod`. |

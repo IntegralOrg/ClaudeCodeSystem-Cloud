@@ -29,7 +29,7 @@ Read `.claude/commands/onboard.md` from this repo and execute it directly. The u
 
 ## Dual-Format Slash Commands (Code vs CoWork)
 
-Slash commands exist in **two formats** to support both Claude Code (CLI) and Claude CoWork (web app):
+Slash commands exist in **two formats** to support both Claude Code and Claude CoWork:
 
 | Format | Location | Frontmatter | How Users Get Them |
 |--------|----------|-------------|-------------------|
@@ -53,7 +53,7 @@ The `name` field should match the filename (without `.md`). The `description` sh
 1. Create the Code version in `.claude/commands/`
 2. Copy it to `cowork-commands/` and prepend the YAML frontmatter
 
-That is it. **You do NOT need to register the command anywhere in `onboard.md`.** Phase 6E installs *every* `.md` from `.claude/commands/` (and uploads every file from `cowork-commands/`) with an unconditional glob copy. Any command you add to that folder ships to every user automatically. There is deliberately no hand-maintained install list, because that list is what kept dropping commands during onboarding.
+That is it. **You do NOT need to register the command anywhere in `onboard.md`.** Phase 6E installs *every* `.md` from `.claude/commands/` with an unconditional glob copy (and copies all of `cowork-commands/` into the vault for users who also use Cowork -- those files are upload-ready mirrors the user adds through Cowork's **Customize** section). Any command you add to those folders ships to every user automatically. There is deliberately no hand-maintained install list, because that list is what kept dropping commands during onboarding.
 
 **To modify an existing command:**
 1. Edit the Code version (the source of truth)

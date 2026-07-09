@@ -40,9 +40,9 @@ The system connects to external platforms through five layers, each serving a di
 │  fathom-fetch.py, classify-transcript.py, etc.   │
 │  → Reusable scripts that handle complex tasks    │
 │                                                   │
-│  Layer 5: Scheduled Automation (launchd / cron)  │
+│  Layer 5: Scheduled Automation (Routines)        │
 │  Runs things automatically on a schedule         │
-│  eod-cron.sh, version pinning, lockfiles         │
+│  Cloud sessions triggered on a cadence (/eod)    │
 │  → Unattended scheduled routines (advanced)       │
 │                                                   │
 ├─────────────────────────────────────────────────┤
@@ -243,8 +243,6 @@ When an operation is too complex for a single curl command, or needs to be reusa
 | `classify-transcript.py` | Python | Routes transcript files to the correct client folder based on participant names and call title. |
 | `rize-triage.sh` | Bash | Fetches Rize time tracking sessions, detects gaps, generates classification input. |
 | `rize-classify.py` | Python | Two-axis classification: client (who) + work_type (delivery/sales/audit/meeting/admin/internal). |
-| `eod-runner.sh` | Bash | Orchestrates EOD phases sequentially with timeouts, logging, and notifications. |
-| `eod-cron.sh` | Bash | Cron wrapper with version pinning, lockfiles, and Gatekeeper handling. |
 | `md-to-gdoc.py` | Python | Converts markdown to styled HTML and uploads to Google Drive as a Google Doc. Preferred method for formatted docs. |
 
 ### Transcript Routing Architecture
@@ -289,39 +287,24 @@ EOD Phase 3: review + relabel via Rize API
 
 The classifier uses app patterns (which apps map to which clients), calendar cross-referencing, and transcript matching to determine both axes. Sessions during detected gaps are reconstructed from per-hour app usage data.
 
-### Example: Cron Automation
+### Scheduled Automation (Routines)
 
-`eod-cron.sh` runs on a schedule via macOS `launchd` (the macOS equivalent of cron). It manages:
+To run a workflow on a schedule without keeping anything on, use a **scheduled Routine** in [Claude Code on the web](https://code.claude.com/docs/en/routines): a saved configuration (prompt + repository + connectors) that runs on Anthropic's cloud infrastructure on a recurring cadence.
 
-1. **Version pinning**: Uses a specific Claude CLI version (stored in a pin file) to avoid TCC permission dialogs from auto-updates. Notifies when a newer version is available.
-2. **Lockfile**: Prevents overlapping runs if a previous EOD is still executing.
-3. **Gatekeeper bypass**: Strips `com.apple.provenance` xattr from the pinned binary.
-4. **Path setup**: Ensures Claude CLI and Homebrew tools are on PATH for launchd context.
+For the nightly EOD:
 
-```bash
-#!/bin/bash
-# Simplified cron wrapper pattern
-BRAIN_DIR="/path/to/vault"
-RUNNER="$HOME/scripts/eod-runner.sh"
+1. Create a routine pointed at your vault repository with the prompt `/eod`
+2. Schedule it (e.g., weekdays at 11:30 PM in your timezone)
+3. Each run starts a fresh cloud session, executes the pipeline, and pushes the results -- tomorrow's plan is ready when you sit down
 
-# Lockfile to prevent overlapping runs
-LOCKFILE="/tmp/eod-runner.lock"
-if [ -f "$LOCKFILE" ]; then
-  LOCK_PID=$(cat "$LOCKFILE" 2>/dev/null)
-  if kill -0 "$LOCK_PID" 2>/dev/null; then
-    echo "SKIPPED: Previous run still active" >&2
-    exit 0
-  fi
-  rm -f "$LOCKFILE"
-fi
-echo $$ > "$LOCKFILE"
-trap 'rm -f "$LOCKFILE"' EXIT
+Considerations for unattended runs:
 
-cd "$BRAIN_DIR"
-source "$RUNNER"
-```
+- **Persistence**: The run must end with a successful `git push` (the `/eod` command's final step) or its output is lost with the workspace
+- **Connectors**: The routine only has access to the connectors attached to it -- attach the same integrations your interactive sessions use
+- **Overlap**: Leave enough gap between scheduled runs that they cannot overlap
+- **Failure alerts**: Have the routine message you (e.g., Slack DM) when a step fails, so silent failures do not go unnoticed
 
-For scheduled automation, a `launchd` plist can trigger this on a schedule (e.g., 11:30 PM weekdays). See `examples/scripts/` for full sanitized versions. Most users run `/eod` manually instead.
+Most users run `/eod` manually instead; the routine is for making it automatic.
 
 ---
 
@@ -482,7 +465,7 @@ FATHOM_API_KEY=your_fathom_key
 
 There are two ways to connect Google services. Choose whichever works for you:
 
-- **Easy way (recommended): Claude.ai managed connections.** You sign in to Google through Claude.ai's Settings > Integrations page. No Cloud Console project needed. Claude gets direct access to Gmail and Google Calendar as built-in tools. If you also use the CLI, add `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to the CLI allow list. Desktop users do not need a local config file for this path.
+- **Easy way (recommended): Claude.ai managed connections.** You sign in to Google through Claude.ai's Settings > Connectors page. No Cloud Console project needed. Claude gets direct access to Gmail and Google Calendar as built-in tools. Add `"mcp__claude_ai_Gmail__*"` and `"mcp__claude_ai_Google_Calendar__*"` to `permissions.allow` in your vault's `.claude/settings.json` so the tools are pre-approved in every session.
 
 - **Full-control way (recommended): `gws` CLI.** Use the `gws` CLI to create or reuse Google access for the system. It is the preferred custom path because it is faster and less error-prone than clicking through Cloud Console. If `gws` is unavailable, use the Cloud Console walkthrough below.
 
@@ -490,7 +473,7 @@ There are two ways to connect Google services. Choose whichever works for you:
 
 If you are using the easy way (Claude.ai managed connections), skip this entire section.
 
-Preferred path: use the `gws` CLI if it is installed on the machine. Cloud Console is the fallback path when the CLI is unavailable or fails.
+Preferred path: use the `gws` CLI if it is available in the workspace. Cloud Console is the fallback path when the CLI is unavailable or fails.
 
 This fallback walkthrough assumes you have never used Google Cloud Console and have no existing project. If you run `/onboard`, Claude will walk you through these same steps interactively.
 
@@ -624,7 +607,7 @@ If you are a Workspace admin, you can also pre-approve the OAuth consent screen 
 
 ### Step 2: Configure Direct Connections
 
-Add direct connections for services you use outside the vault. **Desktop and CoWork users** do this through the app's **Customize** section -- Claude cannot configure these connections itself, only the user can add them through the **Customize** settings. **CLI users** can configure MCP servers in Claude Code's local settings files. Your task manager and any database tools are common first choices. Each connection has its own setup process (usually an API key or OAuth flow). See the `/connect` skill for step-by-step guidance.
+Add direct connections for services you use outside the vault. Built-in connectors are added through claude.ai's **Settings > Connectors** page -- Claude cannot configure these connections itself; only you can add them. Self-configured MCP servers go in the vault's `.mcp.json` (committed with the repository, with secrets referenced as `${ENV_VAR}` placeholders). Your task manager and any database tools are common first choices. Each connection has its own setup process (usually an API key or OAuth flow). See the `/connect` skill for step-by-step guidance.
 
 ### Step 3: Document Your Integrations
 
@@ -658,7 +641,7 @@ When a skill step gets too complex for inline curl commands (pagination, state t
 
 ### Step 6 (Advanced): Schedule Automation
 
-Most users just run `/eod` manually before wrapping up. If you want it to run on a schedule (e.g., 11:30 PM weekdays), see `examples/scripts/` in the setup repository for shell orchestrators, cron wrappers, and macOS `launchd` configs. This requires terminal experience and is completely optional.
+Most users just run `/eod` manually before wrapping up. If you want it to run on a schedule (e.g., 11:30 PM weekdays), create a scheduled Routine in Claude Code on the web pointed at your vault repository with the prompt `/eod` (see "Scheduled Automation (Routines)" above). No terminal, no cron, and your computer does not need to be on.
 
 ---
 
@@ -711,10 +694,6 @@ Every system that syncs data between two sources needs deduplication. The AI che
 
 For long-running workflows (like EOD with multiple sections), use a manifest file to track every item extracted. This prevents items from being lost to context compression (when the AI's conversation gets too long, older context gets summarized). The manifest serves as a persistent ledger the AI can read back at any point.
 
-### macOS Gatekeeper and TCC (Advanced)
+### Unattended Runs Need an Explicit Push
 
-Only relevant if running Claude Code from `launchd` (unattended scheduled automation). Two macOS security systems can block execution:
-- **Gatekeeper**: Blocks binaries with `com.apple.provenance` xattr (downloaded files). Strip with `xattr -d`.
-- **TCC (Transparency, Consent, Control)**: File access permissions are granted per-binary. When Claude auto-updates, the new binary needs fresh TCC grants. Solution: pin a specific version that already has permissions.
-
-Most users do not need to worry about this. It only applies to scheduled automation.
+A scheduled Routine's session is recycled the moment it ends, exactly like an interactive one. If the workflow it runs does not finish with a successful `git push`, the run's output is silently lost -- the routine "worked" and nothing arrived. The `/eod` command ends with a persist step for this reason; keep that step when customizing.

@@ -6,6 +6,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-08] - Cloud Edition Follow-Up: Make Persistence, Secrets, and Scheduling Actually Cloud-Native
+
+The first Cloud Edition pass changed the wording; this pass changes the behavior. The cloud workspace is temporary -- a fresh clone at session start, recycled at session end -- so anything the system wants to keep has to be pushed, and anything it wants in every session has to live in the repository (or the environment settings), not the workspace.
+
+### Fixed
+- **Nothing ever committed or pushed.** The docs called Git "the durability layer," but no command ran `git commit`/`git push`, so every EOD close-out, morning plan, and brain dump died with the workspace. Every writing command (`eod`, `morning`, `brain-dump`, `learn`, `graph-sync`, `graph-daily`, `handoff`) now ends with an explicit commit-and-push step, and `templates/CLAUDE.md` gains a global persistence guideline (#21) covering ad-hoc work.
+- **`/handoff` + `/pickup` were broken across cloud sessions.** A handoff written to `.handoffs/` but never pushed could not reach the next session (which starts from a fresh clone). `/handoff` now commits and pushes the handoff (new Step 3.5) and warns about other unpushed changes; `/pickup` pulls first, treats old local-CLI memory paths (`~/.claude/projects/...`) as unavailable, and knows background processes never survive into a new session.
+- **Onboarding built the vault on disposable disk.** Phase 6A offered `~/Documents/Brain` and `~/Desktop/Brain` -- paths that evaporate with the workspace. The vault now gets its own private GitHub repository (created during 6A), and a new Phase 7A pushes everything before wrap-up. Vault structure now includes a `.gitignore`.
+- **Settings written to ephemeral locations.** Permissions went to `~/.claude/settings.json` (home folder of a temporary workspace) and `settings.local.json` (untracked). Durable permissions now live in the vault's **committed** `.claude/settings.json` (onboard 6D, `/connect`, onboarding guide); MCP servers move from home settings to the vault's committed `.mcp.json` with `${ENV_VAR}` placeholders instead of raw secrets. `examples/settings.json` drops the macOS-only `additionalDirectories` (`$HOME/Library/LaunchAgents`, etc.).
+- **Secrets story.** `.env` is now documented everywhere as a session-local, untracked scratch copy; the permanent home for credentials is environment variables in the Claude Code environment settings (onboard 6C rewritten, `/connect` saves to both and verifies, glossary updated).
+
+### Changed
+- **Local scheduling replaced by cloud Routines.** Deleted `examples/scripts/eod-runner.sh`, `eod-cron.sh`, and `com.brain.eod-runner.plist` (macOS launchd/iCloud/Gatekeeper machinery, contradicting "nothing to install"). README FAQ, `docs/daily-workflow.md`, and `docs/integration-architecture.md` now describe scheduled Routines in Claude Code on the web (`/eod` on a weekday-night schedule, runs and pushes in the cloud). `md-to-gdoc.py` stays -- it runs fine in the workspace.
+- **CoWork story made consistent.** Onboard 6E copies `cowork-commands/` into the vault for Cowork users (upload-ready, no walkthrough), and the repo `CLAUDE.md` maintenance notes match reality again. Remaining Desktop/CLI trichotomy references in `templates/CLAUDE.md` and `docs/integration-architecture.md` reframed for the single cloud runtime.
+- `.gitignore`: dropped the leftover `.obsidian/` block.
+
+---
+
 ## [2026-07-08] - Cloud Edition: Drop Obsidian and Local-Machine Framing
 
 ### Changed

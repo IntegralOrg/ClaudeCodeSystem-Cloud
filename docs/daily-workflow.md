@@ -327,17 +327,18 @@ Phase 1 creates the manifest. Phase 2 reads it for deduplication. Phase 5 reads 
 
 ## Advanced: Scheduled Automation
 
-For power users who want the EOD to run on a schedule (e.g., 11:30 PM weekdays) without manual intervention. This requires terminal setup and is completely optional. Most users just run `/eod` manually.
+To run the EOD on a schedule (e.g., 11:30 PM weekdays) without manual intervention, use a **scheduled Routine** in [Claude Code on the web](https://code.claude.com/docs/en/routines). This is completely optional -- most users just run `/eod` manually.
 
-See `examples/scripts/` in the setup repository for:
-- `eod-runner.sh` -- Shell orchestrator that runs each phase as a separate Claude CLI invocation
-- `eod-cron.sh` -- Cron wrapper with version pinning, lockfiles, and macOS Gatekeeper handling
-- `com.brain.eod-runner.plist` -- macOS `launchd` config for scheduling
+1. Create a routine pointed at your vault repository with the prompt `/eod`
+2. Attach the same connectors your interactive sessions use
+3. Set the schedule (e.g., weekdays at 11:30 PM in your timezone)
+
+Each run starts a fresh cloud session, executes the pipeline, and pushes the results, so tomorrow's plan is ready when you sit down. Nothing runs on your computer.
 
 Key considerations for unattended execution:
-- **Version pinning**: Pin a specific Claude CLI version to avoid macOS TCC permission dialogs from auto-updates
-- **Lockfiles**: Prevent overlapping runs
-- **Notifications**: macOS `osascript` for local, Slack DM for remote failure alerts
+- **Persistence**: The run must end with a successful `git push` (the `/eod` command's final step) or its output is lost with the workspace
+- **Overlap**: Leave enough gap between scheduled runs that they cannot overlap
+- **Notifications**: Have the routine send a Slack DM (or similar) on failure so silent failures do not go unnoticed
 
 ---
 

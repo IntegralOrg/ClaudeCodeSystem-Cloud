@@ -43,6 +43,8 @@ Tell the user:
 - If the file does not exist, create it with the contents from `examples/settings.json` in this repository.
 - If it exists, **merge** permissions: add any missing entries from `examples/settings.json` to the existing `allow` array and `additionalDirectories` array without removing anything. Preserve any other settings (like `mcpServers`).
 
+**Note:** `~/.claude/settings.json` lives in the temporary workspace, so it only covers the current session. That is fine for setup -- the durable copy is written into the vault itself in Phase 6D, and every future session picks it up from the repository automatically.
+
 After writing: "Done. Permissions are set. You will not see approval prompts during setup."
 
 ---
@@ -311,13 +313,20 @@ Tell the user what you are about to create before creating it.
 - Skip the location question.
 
 **If running from the repo folder** (no vault detected):
-AskUserQuestion: "Where should I create your notes folder?"
-Options:
-- Next to this repo in the workspace (../Brain)
-- Inside the workspace root (./Brain)
-- Somewhere else in the workspace (let me specify)
 
-Set `VAULT_PATH` based on their answer.
+The vault must live in its own Git repository with a GitHub remote. The cloud workspace is temporary -- the repository is the only thing that persists between sessions, so "where should the vault live" means "which repository," not "which folder."
+
+AskUserQuestion: "Your vault needs its own GitHub repository (that is what makes it permanent). How do you want to set that up?"
+Options:
+- Create a new private GitHub repo for it now (recommended)
+- I already have an empty repo for it
+- Build it here for now; I will connect it to GitHub before we finish
+
+**If "create a new repo":** Walk them through it, one step at a time: "Go to **github.com/new**, name the repository (something like `Brain`), set it to **Private**, and click **Create repository**. Do not add a README." (If a GitHub tool is connected in this session, offer to create the repo for them instead.) Then in the workspace: create the vault folder (`Brain/` next to the setup files), run `git init` in it, and `git remote add origin <their repo URL>`. Set `VAULT_PATH` to that folder.
+
+**If "existing repo":** Ask for the repository URL (or name, if it is already available in this session). Clone it into the workspace, or if the workspace cannot reach it yet, initialize the folder locally and add the remote. Set `VAULT_PATH` accordingly.
+
+**If "build here":** Create `Brain/` next to the setup files, run `git init` in it, and set `VAULT_PATH` to it. Tell them clearly: "Heads up -- until we connect this to GitHub and push, your vault only exists in this temporary workspace. We will fix that at the end of setup, before you close anything." Phase 7 must not complete without resolving this.
 
 Create the structure at `VAULT_PATH`:
 ```
@@ -351,6 +360,13 @@ Create the structure at `VAULT_PATH`:
 
 Skip folders that do not apply based on their answers.
 
+Also create `VAULT_PATH/.gitignore` with at least:
+```gitignore
+.env
+.DS_Store
+```
+(Everything else in the vault -- including `.claude/settings.json`, `.claude/commands/`, and `.handoffs/` -- is meant to be committed. Do NOT ignore the `.claude/` folder.)
+
 ### 6B: CLAUDE.md
 
 Read `templates/CLAUDE.md` from this repo as the base. Customize with everything from the interview and web research:
@@ -365,21 +381,29 @@ Read `templates/CLAUDE.md` from this repo as the base. Customize with everything
 
 Write to `VAULT_PATH/CLAUDE.md`.
 
-### 6C: .env Template
+### 6C: Secrets
 
-Create `VAULT_PATH/.env` with only the services they selected, commented with instructions:
+Two rules for credentials in the cloud edition:
+1. **Never commit secrets to the vault repository** (`.env` is in `.gitignore` for this reason).
+2. **A plain `.env` file does not survive between cloud sessions** -- the workspace is temporary. The durable home for secrets is the **Claude Code environment settings** (environment variables configured for the environment, injected into every session).
+
+Do this:
+
+1. Create `VAULT_PATH/.env` as a commented template with only the services they selected (values get filled in during `/connect`):
 ```bash
-# Password keychain file for Claude
-# These will be filled in during /connect
+# Password keychain file for Claude (untracked -- never committed)
+# Filled in during /connect. The permanent copies of these values live in
+# your Claude Code environment settings as environment variables.
 
 # (only include sections for tools they selected)
 ```
+2. Tell the user (plain language): "When we connect your tools later, each password or key gets saved as an environment variable in your Claude Code environment settings. That way it is available every time you open a session, without ever being stored in your notes. The `.env` file here is just a scratch copy for this session."
 
-### 6D: Local Settings
+### 6D: Vault Settings (persist across sessions)
 
-Write `VAULT_PATH/.claude/settings.local.json` using `examples/settings.local.json` as the base.
+Write `VAULT_PATH/.claude/settings.json` -- the vault's **committed** settings file -- using the permissions from `examples/settings.json` as the base, plus any MCP permissions for tools they selected. Because this file is checked into the vault repository, every future cloud session starts with the right permissions automatically.
 
-Update `~/.claude/settings.json` to add any MCP permissions for tools they selected that are not already in the allow list.
+Do NOT put these in `VAULT_PATH/.claude/settings.local.json` -- local settings are untracked by convention and would evaporate with the workspace. (The `~/.claude/settings.json` from Phase 1 also only covers the current session.)
 
 ### 6E: Skills
 
@@ -411,6 +435,8 @@ Claude Code on the web auto-discovers `.claude/commands/` files, so installing m
    - Use actual client names and their real toolset throughout.
 
 3. **Create the handoff storage directory:** `VAULT_PATH/.handoffs/` (where `/handoff` stores named handoff files).
+
+3b. **If the user also uses Claude Cowork:** copy `REPO_PATH/cowork-commands/` into `VAULT_PATH/cowork-commands/` (all of it -- same golden rule). These are the same commands with the YAML frontmatter Cowork needs; the user uploads them through Cowork's **Customize** section whenever they want a skill available there. Do not walk through uploads during onboarding -- just tell them the folder exists and every file in it is upload-ready.
 
 4. **Install the Brainstorming community skill.** Run in the vault directory:
    ```
@@ -494,6 +520,17 @@ Create `VAULT_PATH/Inbox/Today.md` with a simple first-day message. Today.md is 
 
 ## Phase 7: Wrap Up and Restart
 
+### 7A: Push the Vault (do this FIRST)
+
+Everything built so far exists only in this temporary workspace until it is pushed. Before any wrap-up talk:
+
+1. In `VAULT_PATH`: `git add -A && git commit -m "Initial vault setup"`
+2. `git branch -M main` (a fresh `git init` can leave the repo on a different default branch -- normalize it first), then `git push -u origin main`
+3. **If there is no remote yet** (the user chose "build it here" in 6A): stop and resolve it now. Walk them through creating the private GitHub repo (github.com/new), run `git remote add origin <URL>`, and push. Do not end onboarding with an unpushed vault -- if the user insists on skipping, warn in the strongest plain terms that their new vault will be gone when this workspace is recycled.
+4. Confirm: "Your vault is safely on GitHub now. Every session from here on starts by cloning it, and the daily commands push your changes back up."
+
+### 7B: Wrap Up
+
 Tell the user what was created (list every folder and file).
 
 Then explain what happens next:
@@ -502,7 +539,7 @@ Then explain what happens next:
 
 Walk them through it step by step:
 
-1. "Your vault is the folder at [vault_path] in your cloud workspace. All your notes live there as Markdown files."
+1. "Your vault is the **[repo name]** repository on GitHub. All your notes live there as Markdown files, and every Claude Code session opens a fresh copy of it in a cloud workspace."
 2. "Take a moment to browse the folders -- Inbox, Work, Resources, and the rest. These are all just text files Claude Code reads and writes for you."
 
 AskUserQuestion: "Can you see your folders?"
@@ -514,7 +551,7 @@ Options:
 4. Walk through the session handoff explicitly. This is a common sticking point, so be very literal:
 
    - "Here is exactly what to do next. I will walk you through it one step at a time."
-   - "Step 1: Start a fresh Claude Code session in your vault at **[vault_path]**."
+   - "Step 1: Start a fresh Claude Code session on your vault repository (**[repo name]**)."
    - "Step 2: Once the new session opens, type exactly this: `/train`"
    - "That is it. `/train` is the next step and it will walk you through how the system works."
 
@@ -535,5 +572,5 @@ Options:
 - If the user seems confused, back up and explain in simpler terms
 - If they want to skip a section, let them and note what was skipped
 - If a file already exists (ran `/onboard` before), ask before overwriting
-- If running from the repo directory, create the vault in a separate location (ask where)
+- If running from the repo directory, the vault gets its own repository (see 6A) -- never build it inside the setup repo
 - Never hardcode `Brain/` when `VAULT_PATH` is known. All generated files should be written relative to `VAULT_PATH`.

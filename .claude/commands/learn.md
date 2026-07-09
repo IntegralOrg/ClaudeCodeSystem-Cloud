@@ -102,3 +102,13 @@ Set up retrieval triggers so this knowledge comes back when it is relevant:
 - If it is a guideline, CLAUDE.md ensures it is applied every session
 - If it is a concept, the knowledge graph links will surface it when related topics come up
 - If it is time-sensitive (expires, needs follow-up), add a task to the inbox with a date
+
+---
+
+## Step 6: Persist to Git
+
+Captured knowledge only survives this cloud session if it is pushed:
+
+`git add -A && git commit -m "Learn: [topic]" && git push`
+
+If the working tree is clean (nothing actually changed), say so and skip the commit/push. If the push is rejected because the remote moved, run `git pull --rebase`, then push again.
