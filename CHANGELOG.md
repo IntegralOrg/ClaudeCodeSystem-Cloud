@@ -6,7 +6,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [2026-07-08] - Cloud Edition Follow-Up: Make Persistence, Secrets, and Scheduling Actually Cloud-Native
+## [2026-07-09] - Git Autopilot: Version Control Becomes Invisible to the User
+
+Users of the cloud edition must never have to think about Git, GitHub, branches, pull requests, or merge conflicts. The biggest delivery risk was divergence: cloud sessions work on harness-assigned `claude/*` branches, stop to ask about PRs, or die without pushing, so changes never reach `main` and parallel sessions fork the vault. This release makes convergence on `main` continuous and self-healing, with three layers:
+
+### Added
+- **Git Autopilot section in `templates/CLAUDE.md`** (plus a rewritten persistence guideline #21). Standing, durable owner authorization that every session reads: `main` is the only branch that matters; sync (`git pull --rebase origin main`) at the start of every session and command; commit and push after every completed unit of work (never more than ~15 minutes unpushed); NEVER create a pull request or ask the user to review/approve/merge one; when the harness assigns a designated `claude/*` branch, push it and then also land the commits on `main` directly (`git push origin HEAD:main` after rebasing); resolve every merge conflict autonomously (Markdown: keep both sides; generated files like `Today.md`: newest wins; config: merge keys, newer value on collision); never surface Git mechanics to the user, except plainly reporting repeated push failures.
+- **`templates/vault-autosync.yml`** -- a GitHub Actions safety net installed by `/onboard` at `.github/workflows/vault-autosync.yml` in the vault. Independent of any session's behavior, it merges every non-`main` branch into `main` (Markdown union-merges; other conflicts resolve toward the branch, which carries the newer work), pushes, and deletes the merged branch (which also closes any stray PR). Triggers: every side-branch push, PR opened/reopened, hourly sweep, manual dispatch. Serialized via a concurrency group; push retries with re-merge if `main` moves mid-run. So even a session that only pushed its designated `claude/*` branch and vanished converges within the hour.
+- **`.gitattributes` in every new vault** (onboard 6A): `*.md merge=union`, so parallel sessions appending to the same Markdown files (inbox files, daily notes) merge cleanly on both the session side and the Action side instead of raising conflicts. Verified: concurrent edits to the same task file keep both sides' lines with no conflict stop.
+
+### Changed
+- **`onboard.md` (Code + CoWork copies)**: 6A now creates `.gitattributes` and installs the autosync workflow unconditionally (never ask the user about it); 7A gains a fallback for tokens that cannot push workflow files (`workflows` scope) -- create the file via the session's GitHub tools, or push everything else and log a TODO; 7A's confirmation wording now promises "you never need to touch GitHub yourself."
 
 The first Cloud Edition pass changed the wording; this pass changes the behavior. The cloud workspace is temporary -- a fresh clone at session start, recycled at session end -- so anything the system wants to keep has to be pushed, and anything it wants in every session has to live in the repository (or the environment settings), not the workspace.
 

@@ -1,0 +1,90 @@
+# Vault Autosync -- the safety net that keeps every change converging on main.
+#
+# Claude sessions are instructed (CLAUDE.md "Git Autopilot") to push straight
+# to main. This workflow catches everything that slips through anyway:
+#   - a session that pushed only to its designated claude/* working branch
+#   - a session that opened a pull request despite instructions
+#   - a branch left behind by a session that died mid-run
+#
+# It merges every non-main branch into main (Markdown union-merges via
+# .gitattributes; anything else conflicting resolves in favor of the branch,
+# which carries the newer work), pushes main, and deletes the merged branch.
+# Deleting a merged branch also closes any pull request opened from it, so
+# the user never has to look at a PR.
+#
+# Runs on every side-branch push, when a PR is opened, and as an hourly sweep.
+# Installed by /onboard at: .github/workflows/vault-autosync.yml
+
+name: Vault Autosync
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+    types: [opened, reopened]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Serialize runs so two near-simultaneous session pushes don't race each other.
+concurrency:
+  group: vault-autosync
+  cancel-in-progress: false
+
+jobs:
+  autosync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge every side branch into main
+        run: |
+          set -e
+          git config user.name "vault-autosync"
+          git config user.email "vault-autosync@users.noreply.github.com"
+
+          # Finish a merge that has conflicts: union handles .md files via
+          # .gitattributes; for everything else keep the branch side (newer).
+          resolve_and_commit() {
+            git checkout --theirs . 2>/dev/null || true
+            git add -A
+            git commit --no-edit
+          }
+
+          push_main() {
+            # main may move under us if a session pushes mid-run; re-merge and retry.
+            for attempt in 1 2 3; do
+              if git push origin main; then return 0; fi
+              git fetch origin main
+              git merge --no-edit -X theirs origin/main || resolve_and_commit
+            done
+            echo "::error::Could not push main after 3 attempts"
+            return 1
+          }
+
+          git fetch origin --prune
+
+          for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin \
+                       | grep -v -E '^origin/(main|HEAD)$'); do
+            branch="${ref#origin/}"
+
+            # Branch already fully in main? Just clean it up.
+            if git merge-base --is-ancestor "$ref" HEAD; then
+              git push origin --delete "$branch" || true
+              continue
+            fi
+
+            echo "Merging $branch into main"
+            git merge --no-ff --no-edit -X theirs "$ref" || resolve_and_commit
+            push_main
+            git push origin --delete "$branch" || true
+          done
+
+          echo "Vault is converged on main."
