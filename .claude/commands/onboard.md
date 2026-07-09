@@ -361,7 +361,7 @@ Create the structure at `VAULT_PATH`:
 Skip folders that do not apply based on their answers.
 
 Also create `VAULT_PATH/.gitignore` with at least:
-```
+```gitignore
 .env
 .DS_Store
 ```
@@ -401,7 +401,7 @@ Do this:
 
 ### 6D: Vault Settings (persist across sessions)
 
-Write `VAULT_PATH/.claude/settings.json` -- the vault's **committed** settings file -- using the permissions from `examples/settings.json` and `examples/settings.local.json` as the base, plus any MCP permissions for tools they selected. Because this file is checked into the vault repository, every future cloud session starts with the right permissions automatically.
+Write `VAULT_PATH/.claude/settings.json` -- the vault's **committed** settings file -- using the permissions from `examples/settings.json` as the base, plus any MCP permissions for tools they selected. Because this file is checked into the vault repository, every future cloud session starts with the right permissions automatically.
 
 Do NOT put these in `VAULT_PATH/.claude/settings.local.json` -- local settings are untracked by convention and would evaporate with the workspace. (The `~/.claude/settings.json` from Phase 1 also only covers the current session.)
 
@@ -525,7 +525,7 @@ Create `VAULT_PATH/Inbox/Today.md` with a simple first-day message. Today.md is 
 Everything built so far exists only in this temporary workspace until it is pushed. Before any wrap-up talk:
 
 1. In `VAULT_PATH`: `git add -A && git commit -m "Initial vault setup"`
-2. `git push -u origin main`
+2. `git branch -M main` (a fresh `git init` can leave the repo on a different default branch -- normalize it first), then `git push -u origin main`
 3. **If there is no remote yet** (the user chose "build it here" in 6A): stop and resolve it now. Walk them through creating the private GitHub repo (github.com/new), run `git remote add origin <URL>`, and push. Do not end onboarding with an unpushed vault -- if the user insists on skipping, warn in the strongest plain terms that their new vault will be gone when this workspace is recycled.
 4. Confirm: "Your vault is safely on GitHub now. Every session from here on starts by cloning it, and the daily commands push your changes back up."
 

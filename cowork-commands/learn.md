@@ -116,4 +116,4 @@ Captured knowledge only survives this cloud session if it is pushed:
 
 `git add -A && git commit -m "Learn: [topic]" && git push`
 
-If the push is rejected because the remote moved, run `git pull --rebase`, then push again.
+If the working tree is clean (nothing actually changed), say so and skip the commit/push. If the push is rejected because the remote moved, run `git pull --rebase`, then push again.

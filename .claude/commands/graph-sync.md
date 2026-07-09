@@ -180,7 +180,7 @@ Graph Sync Complete -- YYYY-MM-DD
 
 ## Final Step: Persist to Git
 
-Commit and push the rebuilt graph -- the workspace is temporary, and an unpushed rebuild is lost when the session ends:
+If the working tree is clean after the rebuild (the graph was already up to date), say so and skip the commit/push. Otherwise commit and push the rebuilt graph -- the workspace is temporary, and an unpushed rebuild is lost when the session ends:
 
 `git add -A && git commit -m "Graph sync YYYY-MM-DD" && git push`
 

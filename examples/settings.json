@@ -9,7 +9,9 @@
       "Write",
       "NotebookEdit",
       "Bash(*)",
+      "Read(/tmp/**)",
       "WebSearch",
+      "WebFetch(*)",
       "mcp__context7__*"
     ],
     "additionalDirectories": [

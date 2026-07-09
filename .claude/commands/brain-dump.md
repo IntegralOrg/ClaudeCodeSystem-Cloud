@@ -61,4 +61,4 @@ Routed items only survive this cloud session if they are pushed:
 
 `git add -A && git commit -m "Brain dump YYYY-MM-DD" && git push`
 
-If the push is rejected because the remote moved, run `git pull --rebase`, then push again. Report "pushed" (or the failure, plainly) as the last line of the summary.
+If the working tree is clean after routing (everything deduped away), say so and skip the commit/push. If the push is rejected because the remote moved, run `git pull --rebase`, then push again. Report "pushed" (or the failure, plainly) as the last line of the summary.

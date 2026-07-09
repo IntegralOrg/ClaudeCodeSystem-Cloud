@@ -405,11 +405,13 @@ Also add `"mcp__clickup__*"` to the `permissions.allow` array in the vault's `.c
 If using an API-key-based server, pass the key via the env block **as a placeholder, never the raw value** (`.mcp.json` is committed; the real value lives in the Claude Code environment settings):
 ```json
 {
-  "clickup": {
-    "command": "npx",
-    "args": ["-y", "clickup-mcp-server"],
-    "env": {
-      "CLICKUP_API_KEY": "${CLICKUP_API_KEY}"
+  "mcpServers": {
+    "clickup": {
+      "command": "npx",
+      "args": ["-y", "clickup-mcp-server"],
+      "env": {
+        "CLICKUP_API_KEY": "${CLICKUP_API_KEY}"
+      }
     }
   }
 }

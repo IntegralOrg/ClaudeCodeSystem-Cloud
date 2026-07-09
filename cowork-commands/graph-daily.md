@@ -99,4 +99,4 @@ When run standalone -- not as part of `/eod`, which pushes once at the end of th
 
 `git add -A && git commit -m "Graph daily sync YYYY-MM-DD" && git push`
 
-If the push is rejected because the remote moved, run `git pull --rebase`, then push again.
+If the working tree is clean after the sync, say so and skip the commit/push. If the push is rejected because the remote moved, run `git pull --rebase`, then push again.

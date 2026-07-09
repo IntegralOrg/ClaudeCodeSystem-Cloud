@@ -117,8 +117,7 @@ ClaudeCodeSystem/
 │   ├── CLAUDE.md                       # Starting CLAUDE.md template (customized by /onboard)
 │   └── .env.example                    # All env var names with descriptions
 ├── examples/                           # Example settings + optional scripts (NOT commands)
-│   ├── settings.json                   # Example: baseline Claude Code permissions
-│   ├── settings.local.json             # Example: project-level permissions
+│   ├── settings.json                   # Example: baseline vault permissions (installed as the vault's .claude/settings.json)
 │   └── scripts/
 │       └── md-to-gdoc.py               # Markdown to Google Doc converter
 ├── .gitignore

@@ -148,7 +148,7 @@ If the push fails after a retry, say so explicitly: the handoff exists only in t
 
 After writing and pushing the file, show a compact summary:
 
-```
+```text
 Handoff saved and pushed: .handoffs/HANDOFF_NAME.md
 
   Goal: [one line]
