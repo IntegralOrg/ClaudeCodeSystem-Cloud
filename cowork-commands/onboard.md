@@ -318,10 +318,9 @@ Tell the user what you are about to create before creating it.
 **If running from the repo folder** (no vault detected):
 AskUserQuestion: "Where should I create your notes folder?"
 Options:
-- In my Documents folder (~/Documents/Brain)
-- On my Desktop (~/Desktop/Brain)
-- Next to this repo (../Brain)
-- Somewhere else (let me specify)
+- Next to this repo in the workspace (../Brain)
+- Inside the workspace root (./Brain)
+- Somewhere else in the workspace (let me specify)
 
 Set `VAULT_PATH` based on their answer.
 

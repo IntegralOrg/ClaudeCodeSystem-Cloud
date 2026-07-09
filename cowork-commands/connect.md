@@ -355,16 +355,25 @@ If successful: "Google is connected!"
 
 Walk through every step:
 
-1. "Open **ClickUp** in your browser and sign in."
+1. **Choose the connection path first.**
 
-2. "Click your **avatar** (bottom-left), then **Settings**."
+**Built-in integration (check this first):**
+- Check whether ClickUp is available in the **Customize** / connectors section of Claude Code on the web.
+- If yes, walk the user through connecting it there. **Only the user can add it** -- do not try to configure the built-in integration yourself. Once connected, add the matching `"mcp__...__*"` entry to the `permissions.allow` array in `~/.claude/settings.json`, then skip straight to the connection test below -- no API token needed.
+- If no built-in integration exists, use a workspace MCP server (below) or fall back to the API-based integration. Both of those need an API token, so collect one now (step 2).
+
+2. **Collect the API token (only for the MCP-server or API-fallback paths).**
+
+"Open **ClickUp** in your browser and sign in."
+
+"Click your **avatar** (bottom-left), then **Settings**."
 
 AskUserQuestion: "Are you in ClickUp Settings?"
 Options:
 - Yes
 - Cannot find settings
 
-3. "In the left sidebar, click **Apps** (or **Integrations**). Look for **API Token**. Click **Generate** if needed. Copy the token."
+"In the left sidebar, click **Apps** (or **Integrations**). Look for **API Token**. Click **Generate** if needed. Copy the token."
 
 AskUserQuestion: "Got the API token?"
 Options:
@@ -372,17 +381,10 @@ Options:
 - Cannot find the API Token section
 - Error
 
-4. Save to `.env`:
+Save to `.env`:
 ```
 CLICKUP_API_KEY=<token>
 ```
-
-5. **Choose the connection path.**
-
-**Built-in integration (check this first):**
-- Check whether ClickUp is available in the **Customize** / connectors section of Claude Code on the web.
-- If yes, walk the user through connecting it there. **Only the user can add it** -- do not try to configure the built-in integration yourself. Once connected, add the matching `"mcp__...__*"` entry to the `permissions.allow` array in `~/.claude/settings.json`.
-- If no built-in integration exists, set up a workspace MCP server (below) or keep the API token in `.env` and treat ClickUp as an API-based integration.
 
 **Workspace MCP server (if there is no built-in integration, or it does not work):**
 - Read `~/.claude/settings.json`. Add a `mcpServers` block for ClickUp (merge with existing mcpServers if any):
@@ -420,7 +422,7 @@ If using an API-key-based server, pass the key via the env block:
 
 After writing the config, tell the user: "I have added the ClickUp connection to your workspace settings. Let me test it."
 
-6. **Test the connection.**
+3. **Test the connection.**
 - If they connected ClickUp through the **Customize** section or a workspace MCP server, use the ClickUp tools to list their workspaces or spaces. Show results.
 - If they are using the API-token fallback, test with a lightweight ClickUp API call using the token saved in `.env`.
 

@@ -57,7 +57,7 @@ Before asking the user anything, audit this file against reality:
 3. **Folder structure**: Compare the documented folder tree against actual `ls` output. Flag mismatches.
 4. **Skills**: Compare skills referenced in this file against files in `.claude/commands/`. Flag mismatches.
 5. **File size**: Check character count. Warn if over 25K, flag as urgent if over 30K.
-Present all findings grouped by category. Ask which to fix. Apply approved fixes via atomic writes.
+Present all findings grouped by category. Ask which to fix. Apply approved fixes by editing the files directly.
 
 **Setup repo check (first review only):**
 If the ClaudeCodeSystem setup repo folder still exists in the workspace outside the vault, nudge once: "The original setup folder is still in your workspace. The originals are already archived in your vault at `Archive/ClaudeCodeSystem-Original/`. Want me to remove the leftover setup folder?" If declined, do not ask again.
