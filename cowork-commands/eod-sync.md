@@ -9,18 +9,7 @@ Cleanup, deduplication, and external sync phase. Reads state from disk (manifest
 
 **This phase runs in a fresh Claude context.** It reads from the manifest and inbox files on disk. No conversation state carries over from Phase 1.
 
-**Critical rule: Atomic writes.** The vault lives on iCloud. Background sync WILL modify files between reads and writes.
-- **ALWAYS use Python atomic writes** (read -> modify -> write in a single `python3` script via Bash) when editing Inbox files.
-- Pattern:
-  ```python
-  python3 << 'PYEOF'
-  with open("path/to/file.md", "r") as f:
-      content = f.read()
-  # ... modify content ...
-  with open("path/to/file.md", "w") as f:
-      f.write(content)
-  PYEOF
-  ```
+**The vault is a Git repository in your cloud workspace.** There is no background file sync, so the built-in editor is safe for reads and writes -- read a file, modify it, and write it back with the Edit or Write tool.
 
 **Critical rule: Route-as-you-go.** Every change (dedup merge, completed-task move, archive) MUST be written to disk immediately. Do not batch changes in memory across multiple files.
 
@@ -44,14 +33,14 @@ Sync task completions from today's `Inbox/Today.md` back to their source inbox f
 1. **Read `Inbox/Today.md`**. If the file is missing or has a stale date header, skip this step (nothing to sync).
 2. **Find all checked tasks** (`- [x]`) that have a source tag: `<!-- src:path/to/file.md|fingerprint -->`
 3. **Skip meetings** (`<!-- type:meeting -->`). Meeting checkboxes are attendance tracking, not task completion.
-4. **For each completed task** (atomic write per source file):
+4. **For each completed task** (edit each source file directly):
    - Parse the source file path and fingerprint from the `<!-- src:... -->` tag
    - Read the source file
    - Search for the matching task by substring-matching the fingerprint against `- [ ]` lines
    - If found: change `- [ ]` to `- [x]` for that line
    - If not found (task was already completed, moved, or reworded): skip silently
    - Increment `SYNCED_BACK`
-5. **Batch by file**: if multiple completed tasks point to the same source file, apply all changes in a single atomic write to that file.
+5. **Batch by file**: if multiple completed tasks point to the same source file, apply all changes in a single write to that file.
 6. Log: `"Synced {SYNCED_BACK} completions from Today.md back to inbox files"`
 
 ---
@@ -65,7 +54,7 @@ Scan all client inbox files for duplicate tasks. Two tasks are duplicates if the
 3. **Compare within each file** using fuzzy matching:
    - Normalize: lowercase, strip leading `- [ ] `, strip trailing parenthetical source notes
    - Match threshold: strings that are identical after normalization, or differ only by date references or source annotations
-4. **When a duplicate is found** (atomic write):
+4. **When a duplicate is found** (edit the file directly):
    - Keep the first occurrence
    - Merge source notes from the duplicate into the kept item (append `*also from <source>*`)
    - Remove the duplicate line
@@ -78,7 +67,7 @@ Scan all client inbox files for duplicate tasks. Two tasks are duplicates if the
 
 Find checked items (`- [x]`) in each client file and move them to that file's Completed section.
 
-1. **For each client file** (atomic write per file):
+1. **For each client file** (edit each file directly):
    - Read the file
    - Find all `- [x]` items in `## Open Tasks`
    - Move them to `## Completed` (create the section if it does not exist, insert before `## Notes`)
@@ -117,7 +106,7 @@ Sync new and completed tasks with the configured task manager using its MCP tool
    - For each client file, read the `## Completed` section
    - If non-empty, append its contents to `Archive/Completed Week of YYYY-MM-DD.md` (use the Monday date). Create the archive file if it does not exist.
    - Clear the `## Completed` section in the client file (leave the header, remove all items)
-   - Use atomic writes for both the archive file and the client file
+   - Write both the archive file and the client file
 
 ---
 

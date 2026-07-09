@@ -7,9 +7,7 @@ description: Full monthly system review: collect feedback, clean vault, scan tes
 
 Runs a full system review: collects user feedback, cleans the vault, scans for testimonials, applies improvements, and updates the review date. Run this on the last workday of each month.
 
-**Critical rule: Atomic writes.** The vault lives on iCloud. Background sync WILL modify files between reads and writes.
-- **ALWAYS use Python atomic writes** (read -> modify -> write in a single `python3` script via Bash) when editing existing files.
-- The Write tool is acceptable for NEW files since there's no read-modify-write race.
+**The vault is a Git repository in your cloud workspace.** There is no background file sync, so the built-in editor is safe for reads and writes -- read a file, modify it, and write it back with the Edit or Write tool.
 
 ---
 
@@ -71,7 +69,7 @@ Options:
 - Let me pick which ones to fix
 - Skip this, move on to vault cleanup
 
-Apply approved fixes via atomic writes. For missing scripts or integrations, update CLAUDE.md to remove or comment out the stale entries. For missing documentation of real tools, add entries.
+Apply approved fixes by editing the files directly. For missing scripts or integrations, update CLAUDE.md to remove or comment out the stale entries. For missing documentation of real tools, add entries.
 
 ---
 
@@ -81,7 +79,7 @@ Apply approved fixes via atomic writes. For missing scripts or integrations, upd
 2. Check for notes filed in wrong folders (e.g., client content in `Inbox/[YourCompany].md` instead of the correct client file)
 3. Flag files with outdated information (references to past dates, completed projects still marked active)
 4. Identify empty or unused files (no content beyond template headers)
-5. Present findings to the user; apply approved changes via atomic writes
+5. Present findings to the user; apply approved changes directly
 
 ---
 
@@ -93,7 +91,7 @@ Apply approved fixes via atomic writes. For missing scripts or integrations, upd
    - Filter to DMs and client channels only
 3. Search vault transcript files for positive client feedback in call recordings
 4. Present all findings to the user with source and context
-5. For each approved quote, append to `[YourCompany]/Testimonials.md` via atomic write with:
+5. For each approved quote, append to `[YourCompany]/Testimonials.md` with:
    - The quote text
    - Client name (or anonymized label if preferred)
    - Date and source (Slack/call)
@@ -105,11 +103,11 @@ Apply approved fixes via atomic writes. For missing scripts or integrations, upd
 1. Route system improvements (tool ideas, automation suggestions) to `Resources/Reference/System Improvements.md`
 2. Route workflow changes (new processes, updated procedures) to `CLAUDE.md`
 3. Route preference updates (tone, behavior, formatting) to Assistant Guidelines section of `CLAUDE.md`
-4. All edits via atomic writes; present a summary of what changed and where
+4. Make all edits directly; present a summary of what changed and where
 
 ---
 
 ## Step 6: Update Review Date
 
-1. Update the "Last Monthly Review" date in `CLAUDE.md` to today's date via atomic write
+1. Update the "Last Monthly Review" date in `CLAUDE.md` to today's date
 2. Print a final summary: feedback items logged, vault issues found/fixed, testimonials added, improvements routed

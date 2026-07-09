@@ -6,6 +6,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-08] - Cloud Edition: Drop Obsidian and Local-Machine Framing
+
+### Changed
+- **The documentation no longer describes the system as "built on Obsidian" or as running on the user's local machine.** This is the cloud edition -- it runs in Claude Code on the web, and the vault is a Git repository of Markdown files that Claude reads and writes directly in a cloud workspace. The system is now described as **built on Claude Code and a Git-backed Markdown vault**.
+- **`README.md`**: rewrote the tagline, "What you will need," and Get Started sections for the cloud edition; removed the Windows local-install section (Git Bash / Developer Mode / Virtual Machine Platform); relabeled the architecture diagram's "Obsidian Vault" box to "Git-Backed Vault (Markdown)"; replaced the iCloud atomic-write note; updated the Windows/Linux and cost FAQs.
+- **`docs/onboarding-guide.md`**: dropped the "Pick Your Claude Interface" (Desktop vs CLI) step and the "Install Obsidian" step; reframed requirements, permission descriptions, the `/connect` and morning steps, and the glossary for the cloud edition.
+- **`docs/vault-design-guide.md`**: retitled and rewrote "Why Obsidian?" as "Why a Git-backed Markdown vault?"; updated the core-idea, template-placeholder, atomic-writes, and "what makes this different" sections.
+- **`docs/integration-architecture.md`**, **`docs/daily-workflow.md`**, **`templates/CLAUDE.md`**: relabeled the vault, dropped the Desktop/CoWork/CLI trichotomy and iCloud/Dropbox sync-race rationale, and reframed wiki-links as the graph convention (not "clickable in Obsidian").
+- **Commands** (`onboard`, `train`, `finish`, `graph-sync`, `graph-daily`, `eod-gather`, `eod-sync`, `monthly-review`, `brain-dump`, `morning`) and their `cowork-commands/` mirrors: removed "Open Obsidian" instructions, the "nothing is in the cloud / on your machine" framing, `.obsidian/` exclusions, and the iCloud atomic-write rule.
+- **Repo `CLAUDE.md`**: bootstrap detection no longer keys on `.obsidian/`; it now detects an existing vault by its contents (`CLAUDE.md`, `Inbox/`, `Work/`).
+
+---
+
 ## [2026-06-18] - Single Command Folder: Removed examples/commands/, Unconditional Install
 
 ### Fixed

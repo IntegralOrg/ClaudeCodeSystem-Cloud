@@ -7,9 +7,7 @@ description: Dictate everything on your mind and have it parsed, classified, and
 
 Manual brain dump command. The user dictates everything on their mind and the assistant parses, classifies, and routes each item to the correct location in the vault.
 
-**Critical rule: Atomic writes.** The vault lives on iCloud. Background sync WILL modify files between reads and writes.
-- **ALWAYS use Python atomic writes** (read -> modify -> write in a single `python3` script via Bash) when editing existing files.
-- The Write tool is acceptable for NEW files since there's no read-modify-write race.
+**The vault is a Git repository in your cloud workspace.** There is no background file sync, so the built-in editor is safe for reads and writes -- read a file, modify it, and write it back with the Edit or Write tool.
 
 **Critical rule: Tasks are flat bullets.** Do NOT create `### New from <source>` subsection headers for tasks. Append new tasks directly under `## Open Tasks` as flat bullets. Source context lives in the italic suffix at the end of each task (e.g., `*from Brain Dump MM/DD*`). Only `### Notes from <source>` headers under `## Notes` are allowed -- meeting notes benefit from source grouping, tasks do not.
 
@@ -35,7 +33,7 @@ Manual brain dump command. The user dictates everything on their mind and the as
 
 ## Step 3: Route Items
 
-1. For each classified item, route via atomic write:
+1. For each classified item, route by editing the target file directly:
    - **Client tasks** -> `Inbox/<Client>.md` under `## Open Tasks` as `- [ ]` items
    - **Client notes** -> `Inbox/<Client>.md` under `## Notes` as plain bullets
    - **Cross-client tasks/notes** -> `Inbox/[YourCompany].md` under `## Open Tasks` or `## Notes`

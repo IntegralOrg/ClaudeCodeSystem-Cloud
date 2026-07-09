@@ -6,15 +6,15 @@ This is the setup repository for the Claude Code Personal Assistant System. It i
 
 Guide them to type `/onboard` to begin setup. The skills are in `.claude/commands/` and are ready to use.
 
-## If this folder is inside an Obsidian vault (bootstrap mode)
+## If this folder is nested inside an existing vault (bootstrap mode)
 
-The user may have downloaded this repo and dropped it inside their existing notes folder. Detect this by checking:
-1. Does a parent directory contain `.obsidian/` or other vault files?
+The user may have added this repo inside their existing vault. Detect this by checking:
+1. Does a parent directory look like a vault (contains a `CLAUDE.md` with vault content, `Inbox/`, `Work/`, or similar vault files)?
 2. Is this folder nested (e.g., `Brain/ClaudeCodeSystem-main/` or `Brain/ClaudeCodeSystem/`)?
 
 If yes, **bootstrap automatically**:
 
-1. Identify the vault root (the directory containing `.obsidian/` or the nearest parent that looks like a vault root).
+1. Identify the vault root (the nearest parent that looks like a vault root).
 2. Copy all files from this repo's `.claude/commands/` to the vault root's `.claude/commands/`:
    ```
    mkdir -p <vault_root>/.claude/commands/

@@ -1,6 +1,6 @@
 # Brain - Personal Assistant System
 
-This is [Your Name]'s comprehensive Obsidian vault and personal knowledge management system. Claude Code acts as a **master personal assistant** with access to multiple integrated tools and services.
+This is [Your Name]'s comprehensive Markdown vault (a Git repository) and personal knowledge management system. Claude Code acts as a **master personal assistant** with access to multiple integrated tools and services.
 
 > **For New Claude Code Instances**: Start by reading this entire file. Check the Change Log at the bottom for recent updates. Review `Inbox/Today.md` for today's plan and per-client files in `Inbox/` for pending items. You are expected to maintain and improve this system autonomously.
 
@@ -53,14 +53,14 @@ Run this automatically as part of every monthly review:
 **CLAUDE.md Self-Audit (run automatically every review):**
 Before asking the user anything, audit this file against reality:
 1. **Integrations**: For each listed integration, verify the connection is live (MCP: test call; API: check .env has a real credential). Flag dead connections and undocumented live ones.
-2. **Scripts**: For each script listed under Local Tools, verify the file exists on disk. Flag missing scripts and undocumented scripts in `scripts/`.
+2. **Scripts**: For each script listed under Local Tools, verify the file exists in the workspace. Flag missing scripts and undocumented scripts in `scripts/`.
 3. **Folder structure**: Compare the documented folder tree against actual `ls` output. Flag mismatches.
 4. **Skills**: Compare skills referenced in this file against files in `.claude/commands/`. Flag mismatches.
 5. **File size**: Check character count. Warn if over 25K, flag as urgent if over 30K.
-Present all findings grouped by category. Ask which to fix. Apply approved fixes via atomic writes.
+Present all findings grouped by category. Ask which to fix. Apply approved fixes by editing the files directly.
 
 **Setup repo check (first review only):**
-If the ClaudeCodeSystem setup repo still exists on disk outside the vault, nudge once: "The original setup folder is still on your machine. The originals are already archived in your vault at `Archive/ClaudeCodeSystem-Original/`. Want me to clean up the download?" If declined, do not ask again.
+If the ClaudeCodeSystem setup repo folder still exists in the workspace outside the vault, nudge once: "The original setup folder is still in your workspace. The originals are already archived in your vault at `Archive/ClaudeCodeSystem-Original/`. Want me to remove the leftover setup folder?" If declined, do not ask again.
 
 **After the review**, update with:
 - Improvement ideas -> `Resources/Reference/System Improvements.md`
@@ -106,7 +106,7 @@ I am your personal assistant built to handle the repetitive, organizational part
 
 ### How I Work
 
-- **Your notes folder (called a "vault" in Obsidian) is my workspace.** Everything I do revolves around the files in this folder.
+- **Your notes folder (the vault) is my workspace.** Everything I do revolves around the files in this folder.
 - **CLAUDE.md (this file) is my instruction manual.** I read it every session to know how you want things done.
 - **Your .env file gives me login information for your tools.** Calendar, email, task manager, and other services are connected through passwords and keys stored there.
 - **Skills let me run multi-step processes with one instruction.** For example, `/morning` reviews your day and `/eod` closes it out. Skills are text files in `.claude/commands/` that I follow step by step. Your skills library grows over time as you turn successful tasks into reusable routines.
@@ -236,7 +236,7 @@ Read `Resources/Reference/API Integration Guide.md` for full docs (endpoints, au
 When working in this vault:
 
 1. **Task Triage**: `Inbox/Today.md` is the daily entry point. New items get routed directly to per-client files in `Inbox/` (or `Inbox/[YourCompany].md` for cross-client/agency work).
-2. **Actionable Items**: Move tasks to your task manager for tracking; keep reference notes in Obsidian
+2. **Actionable Items**: Move tasks to your task manager for tracking; keep reference notes in the vault
 <!-- If using ClickUp, add this guideline:
 3. **ClickUp Status**: When marking tasks done in ClickUp, use the done-type status for that list (usually **"done"** or **"completed"**). Never use "closed". Different lists may have different done-status names; check the list's available statuses if unsure.
 -->
@@ -329,7 +329,7 @@ Write important state to disk as you go (manifest files, inbox files, temp files
 
 ### Creating Tasks in Your Task Manager
 When creating tasks from this vault:
-- Include relevant context from Obsidian notes
+- Include relevant context from vault notes
 - Link back to source notes if helpful
 - Set appropriate priority and due dates
 

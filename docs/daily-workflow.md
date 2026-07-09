@@ -176,8 +176,8 @@ Items that weren't completed yesterday and are re-selected for today:
 ```
 The number increments each day. Items carried for 3+ days surface as a concern during the morning review.
 
-#### Obsidian Wiki-Links
-References to vault files use `[[wiki-links]]` so you can click through directly in Obsidian:
+#### Wiki-Links
+References to vault files use `[[wiki-links]]` as the graph convention, so Claude traverses by relationship rather than folder path:
 ```
 **Recent activity:** [[2026-03-14 - Client B Weekly Sync]]
 ```
@@ -389,22 +389,9 @@ Every extracted item gets routed to its destination file immediately, not batche
 - A phase fails partway through
 - The session is interrupted
 
-### Atomic Writes for iCloud
+### File Edits Are Safe
 
-If your vault syncs via cloud storage, use Python read-modify-write instead of the AI's built-in file editor:
-
-```python
-python3 << 'PYEOF'
-with open("Inbox/ClientA.md", "r") as f:
-    content = f.read()
-# Insert new task under Open Tasks
-content = content.replace("### Open Tasks\n", "### Open Tasks\n- [ ] New task -- *from source*\n")
-with open("Inbox/ClientA.md", "w") as f:
-    f.write(content)
-PYEOF
-```
-
-The built-in file editor reads the file, then writes it as a separate operation. If iCloud syncs a change in between, the write overwrites the sync. The Python script does both in a single process.
+The vault is a Git repository in your cloud workspace -- there is no background file sync, so the built-in editor is safe for reads and writes. Edit files normally; you do not need special atomic-write handling. Git is the durability layer: commit and push to persist your changes.
 
 ### Deduplication
 

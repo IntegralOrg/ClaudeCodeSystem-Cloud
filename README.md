@@ -1,57 +1,20 @@
 # Claude Code Personal Assistant System
 
-An AI-powered personal assistant built on [Obsidian](https://obsidian.md) + [Claude Code](https://docs.anthropic.com/en/docs/claude-code). The vault is the operating system; Claude Code is the brain. Together they handle task management, meeting processing, email triage, time tracking, client work, and daily planning -- replacing a human executive assistant.
+An AI-powered personal assistant built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and a Git-backed Markdown vault. The vault is the operating system; Claude Code is the brain. Together they handle task management, meeting processing, email triage, time tracking, client work, and daily planning -- replacing a human executive assistant.
 
-It can be used from either the Claude Desktop app or the Claude Code CLI. The setup now asks which one the user is using and changes the integration setup path accordingly.
+This is the **cloud edition**: it runs in [Claude Code on the web](https://code.claude.com/docs/en/claude-code-on-the-web), in your browser. Your vault is a Git repository of Markdown files that Claude reads and writes directly in a cloud workspace -- nothing to install on your own computer.
 
 > **You do not need to be technical.** Claude will walk you through everything step by step.
 >
-> **What you will need:** A Mac or PC, [Obsidian](https://obsidian.md) (free), and a [Claude Max subscription](https://claude.ai) ($100/month -- includes Claude Code).
->
-> **Windows users:** Complete the Windows setup steps below before opening Claude for the first time.
-
-## Windows Setup (do this first)
-
-Skip this section if you are on Mac or Linux.
-
-These steps must be done **before** opening Claude Code. They require one restart, so we batch them together.
-
-**Step 1: Create your notes folder**
-- Open File Explorer, go to your **Documents** folder, and create a new folder called **Brain**
-
-**Step 2: Enable Developer Mode**
-- Open **Settings** > **System** > **For developers** (or search "Developer Mode" in Settings)
-- Turn on **Developer Mode** and confirm if prompted
-
-**Step 3: Install Git Bash**
-- Go to [git-scm.com](https://git-scm.com) and click **Download for Windows**
-- Run the installer -- accept all the default options (just click Next until it finishes)
-
-**Step 4: Install Claude**
-- Go to [claude.ai/download](https://claude.ai/download) and install the desktop app
-- Open Claude once -- it will install **Virtual Machine Platform** (a Windows component it needs). Let it finish.
-
-**Step 5: Restart your computer**
-- This one restart covers Git Bash, Developer Mode, and Virtual Machine Platform all at once
-
-**Step 6: Open Claude and start setup**
-- After restarting, open Claude and navigate to this folder
-- Type `/onboard` to begin
-
----
+> **What you will need:** A GitHub account (for your vault repository) and a [Claude subscription](https://claude.ai) that includes Claude Code on the web.
 
 ## Get Started
 
-**Option A -- Open Claude Code in this folder:**
+1. Create (or pick) a GitHub repository to hold your vault, and open it in [Claude Code on the web](https://code.claude.com/docs/en/claude-code-on-the-web).
+2. Add this setup repo's files to that workspace if they are not already there.
+3. Type `/onboard` to begin.
 
-```
-cd path/to/ClaudeCodeSystem
-claude
-```
-
-Then type `/onboard`.
-
-**Option B -- Already have an Obsidian vault?** Drop this entire folder into your vault, open Claude Code in your vault, and say:
+**Already have a vault repository?** Drop this setup repo's files into it, then say:
 
 > Set me up
 
@@ -61,8 +24,8 @@ Either way, Claude interviews you in a friendly question-and-answer format (no m
 
 | Step | Command | What It Does | Time |
 |------|---------|-------------|------|
-| 1 | `/onboard` | Detect Desktop vs CLI, learn about you, build your notes folder and files | ~20 min |
-| 2 | `/train` | Walk through Obsidian, your vault, skills, and the daily loop | ~15 min |
+| 1 | `/onboard` | Learn about you, build your vault folders and files | ~20 min |
+| 2 | `/train` | Walk through your vault, skills, and the daily loop | ~15 min |
 | 3 | `/connect` | Connect each of your tools (calendar, email, tasks, etc.) one by one | ~20 min |
 | 4 | `/finish` | Live demo with real data, improvement tips, how to maximize the system | ~10 min |
 
@@ -91,7 +54,7 @@ Each part ends by telling you what to type next. You can pause between parts and
 │   Context7             Transcript Service                         │
 │                                                                    │
 ├──────────────────────────────────────────────────────────────────┤
-│                       Obsidian Vault                              │
+│                  Git-Backed Vault (Markdown)                      │
 │   Inbox/Today.md · Inbox/<Client>.md · Work/Clients/<Client>/    │
 │   [YourCompany]/ · Work/Daily/ · Templates/ · Resources/         │
 └──────────────────────────────────────────────────────────────────┘
@@ -111,7 +74,7 @@ Each part ends by telling you what to type next. You can pause between parts and
 By the end of all 4 steps, you will have (see the [Onboarding Guide](docs/onboarding-guide.md) for details):
 
 - **Permissions** configured so Claude can work without interrupting you
-- **Notes folder** (Obsidian vault) with organized folders for clients, projects, and tasks
+- **Notes folder** (a Git-backed Markdown vault) with organized folders for clients, projects, and tasks
 - **Instruction manual** (CLAUDE.md) customized with your name, schedule, clients, and preferences
 - **Tool connections** to your calendar, email, task manager, and other services
 - **Skills** for morning review, end-of-day processing, and other workflows
@@ -169,7 +132,7 @@ ClaudeCodeSystem/
 
 | Document | What It Covers |
 |----------|---------------|
-| [Onboarding Guide](docs/onboarding-guide.md) | Step-by-step setup for new users: permissions, Obsidian, CLAUDE.md, first tool connection, workflow discovery |
+| [Onboarding Guide](docs/onboarding-guide.md) | Step-by-step setup for new users: permissions, vault structure, CLAUDE.md, first tool connection, workflow discovery |
 | [Vault Design Guide](docs/vault-design-guide.md) | Folder structure, inbox system, CLAUDE.md design, skills, integrations, monthly reviews, step-by-step build guide |
 | [Integration Architecture](docs/integration-architecture.md) | How Claude connects to your tools: direct connections, tool credentials, custom scripts, scheduled automation |
 | [Daily Workflow](docs/daily-workflow.md) | Today.md structure, /morning interactive review, EOD 5-phase pipeline, scheduled automation, tracking list pattern, carry-forward system |
@@ -199,8 +162,8 @@ Because each handoff is a named, persistent file inside the vault, they accumula
 ### Tracking Lists (The Manifest Pattern)
 Long-running workflows track every extracted item in a tracking list (`/tmp/eod-manifest-TODAY.md`). Each item gets: description, client, type, source, destination, status. This makes sure nothing gets lost during long processes.
 
-### Safe File Writes (Atomic Writes)
-If your notes folder syncs via iCloud or Dropbox, use Python read-modify-write scripts instead of Claude's built-in editor. The editor's separate read and write operations can lose data when cloud sync modifies the file in between. This is a safety measure for cloud-synced notes.
+### File Writes
+Your vault is a Git repository in a cloud workspace -- there is no background file sync racing against Claude's edits, so the built-in editor is safe for reads and writes. Git history is your safety net: commit and push to persist changes and roll back if needed.
 
 ### Route-As-You-Go
 Every extracted item is routed to its destination file immediately, not batched for later. This prevents data loss if a step fails partway through or the process runs long.
@@ -213,11 +176,11 @@ The default `/eod` flow should run as one command in one Claude session. Claude 
 **Do I need all these tool connections?**
 No. Start with Calendar + Email + your meeting transcript service. Add connections as you need them.
 
-**Does this work on Windows and Linux?**
-Yes. Everything works on Mac, Linux, and Windows. Windows users need Git Bash, Developer Mode, and Virtual Machine Platform -- the setup process handles all of this automatically.
+**Do I need to install anything?**
+No. This is the cloud edition -- it runs in Claude Code on the web, in your browser. There is nothing to install on your own computer; you only need a GitHub account for your vault repository. It works from any Mac, Windows, or Linux machine with a browser.
 
 **How much does this cost?**
-Claude Code requires a [Claude Max subscription](https://claude.ai) ($100/month). Connections to Google, Slack, and similar services are within their free tiers for personal use. Some tools (like meeting transcript services or time trackers) have their own pricing.
+Claude Code on the web requires a [Claude subscription](https://claude.ai). Connections to Google, Slack, and similar services are within their free tiers for personal use. Some tools (like meeting transcript services or time trackers) have their own pricing.
 
 **Can I use this for a team?**
 The system is designed for one person. You could adapt it for a small team, but it would need significant customization.

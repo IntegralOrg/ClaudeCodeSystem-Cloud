@@ -11,19 +11,7 @@ Data gathering phase. Triages Brain Dump first, then fetches Fathom transcripts,
 
 **Critical rule: Route-as-you-go.** Every item extracted MUST be routed to the correct client file AND logged to the manifest IMMEDIATELY.
 
-**Critical rule: Atomic writes.** The vault lives on iCloud. Background sync WILL modify files between reads and writes.
-- **ALWAYS use Python atomic writes** (read -> modify -> write in a single `python3` script via Bash) when editing Inbox files.
-- Pattern:
-  ```python
-  python3 << 'PYEOF'
-  with open("path/to/file.md", "r") as f:
-      content = f.read()
-  # ... modify content ...
-  with open("path/to/file.md", "w") as f:
-      f.write(content)
-  PYEOF
-  ```
-- The Write tool is acceptable for NEW files (transcripts, manifest) since there's no read-modify-write race.
+**The vault is a Git repository in your cloud workspace.** There is no background file sync, so the built-in editor is safe for reads and writes -- when editing an Inbox file, read it, modify it, and write it back with the Edit or Write tool. The Write tool is fine for new files (transcripts, manifest).
 
 **Critical rule: Tasks are flat bullets.** Do NOT create `### New from <source>` subsection headers for tasks. Append new tasks directly under `## Open Tasks` as flat bullets. Source context lives in the italic suffix at the end of each task (e.g., `*from Fathom: [Call Name] MM/DD*`). This keeps client files scannable as history accumulates. (`### Notes from <source>` headers under `## Notes` are still fine -- meeting notes benefit from source grouping, tasks do not.)
 
@@ -90,7 +78,7 @@ Process the Brain Dump section in `Inbox/Today.md`. This is the user's quick-cap
    - Meeting notes with mixed clients: split by client, route each subset to the correct file
    - Always route as plain bullets (NOT checkboxes) under a `### Notes from <source>` header in the client file
 
-5. **Route via atomic writes** (Python read-modify-write):
+5. **Route the items** (read each file, modify it, write it back):
    a. For each client file that needs items added:
       - Read the file
       - Tasks (`- [ ]` items): append directly under `## Open Tasks` as flat bullets. Preserve source via the inline italic suffix `*from Brain Dump MM/DD*`. Do NOT create a `### New from Brain Dump MM/DD` subsection header.
@@ -134,7 +122,7 @@ Process the Brain Dump section in `Inbox/Today.md`. This is the user's quick-cap
 
    **Task vs. Note distinction**: Only create `- [ ]` items for clear, specific next actions. Meeting recaps without action items, status updates, and finalized decisions are Type `note` (not tasks).
 
-5. **ROUTE IMMEDIATELY** (atomic writes for all Inbox file edits):
+5. **ROUTE IMMEDIATELY** (edit the Inbox files directly):
    a. Determine the client from the JSON report's `client` field (already classified by the script)
    b. Tasks -> `Inbox/<Client>.md` under `Open Tasks`; cross-client/agency/hiring/internal -> `Inbox/[YourCompany].md` under `Open Tasks`
    c. Notes/decisions -> `## Notes` section (plain bullets, NOT checkboxes)
@@ -169,7 +157,7 @@ Process the Brain Dump section in `Inbox/Today.md`. This is the user's quick-cap
 
    **Task vs. Note distinction**: Only create tasks for emails needing a specific action. Fathom recaps, calendar acceptances, FYI emails, auto-notifications are NOT tasks.
 
-5. **ROUTE IMMEDIATELY** (atomic writes):
+5. **ROUTE IMMEDIATELY**:
    a. Tasks -> client file `Open Tasks`; Notes -> `## Notes` section
    b. Append manifest rows
 
@@ -182,7 +170,7 @@ For each workspace (customize with your workspace names):
 2. Use `conversations.list` (types=im,mpim) then `conversations.history` with `unreads=true`
 3. Surface unread DMs, mentions, time-sensitive items
 4. Skip channels with no unread activity
-5. **ROUTE IMMEDIATELY** (atomic writes):
+5. **ROUTE IMMEDIATELY**:
    a. Append items to client file `Open Tasks`
    b. Append manifest rows
 

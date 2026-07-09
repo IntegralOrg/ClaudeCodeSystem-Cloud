@@ -3,7 +3,7 @@
 You are setting up the Claude Code Personal Assistant system for a new user. This is Part 1 of a 4-part setup process:
 
 1. **`/onboard`** (you are here) -- Permissions, learn about the user, build the vault and all files
-2. **`/train`** -- Learn how the system works (Obsidian, vault, skills, daily loop)
+2. **`/train`** -- Learn how the system works (vault, skills, daily loop)
 3. **`/connect`** -- Connect all your tools (calendar, email, task manager, etc.)
 4. **`/finish`** -- Take it for a spin, learn how to improve it over time
 
@@ -18,59 +18,25 @@ You are setting up the Claude Code Personal Assistant system for a new user. Thi
 Before doing anything, figure out where you are running.
 
 1. **Check if this is the repo folder or a vault.** Look for `templates/CLAUDE.md` and `docs/` in the current directory or its children.
-   - If found in the current directory: you are inside the setup repo. Note the repo path. **But before assuming the vault needs to be created elsewhere, check parent directories** (up to 3 levels) for `.obsidian/` or other vault indicators (like an existing `CLAUDE.md` with vault content, `Inbox/`, `Work/`). If a parent vault is found, set `VAULT_PATH` to that parent directory and treat this like the subfolder case below (the user opened Claude inside the repo folder instead of the vault root). Only if no parent vault is found should you defer to Phase 6A.
+   - If found in the current directory: you are inside the setup repo. Note the repo path. **But before assuming the vault needs to be created elsewhere, check parent directories** (up to 3 levels) for vault indicators (like an existing `CLAUDE.md` with vault content, `Inbox/`, `Work/`). If a parent vault is found, set `VAULT_PATH` to that parent directory and treat this like the subfolder case below (the user opened Claude inside the repo folder instead of the vault root). Only if no parent vault is found should you defer to Phase 6A.
    - If found in a subfolder (e.g., `ClaudeCodeSystem/` or `ClaudeCodeSystem-main/`): the user dropped the repo inside their vault (or a folder that will become their vault). Note the repo subfolder path. The current directory is the vault root. Set `VAULT_PATH` to the current directory immediately.
 
 2. **Locate the reference files.** Set `REPO_PATH` to wherever `templates/CLAUDE.md` lives. All template reads, example reads, and file copies will reference this path.
 
 3. **If the setup commands aren't at the project root yet** (i.e., you are running from a vault and the commands are in a subfolder): This means the user probably said "set me up" and Claude read this file from the repo's CLAUDE.md. The commands are already loaded. Proceed normally.
 
-Proceed to Phase 0B.
-
----
-
-## Phase 0B: Verify Windows Prerequisites (Windows only)
-
-**Skip this phase entirely if the user is on macOS or Linux.** Detect the platform by running `uname -s` or checking for Windows-specific paths.
-
-Windows users should have completed the prerequisite steps from the README before opening Claude (Git Bash, Developer Mode, Virtual Machine Platform, and a restart). This phase does a quick verification. Run checks silently and only surface issues.
-
-### Verify Git
-Run: `git --version 2>&1`
-
-If Git is not found: "It looks like Git is not installed yet. The README has Windows setup steps that need to be done before we can continue. Here is the quick version:"
-1. "Go to **git-scm.com** and click **Download for Windows**."
-2. "Run the installer and accept all defaults."
-3. "After installing, you will need to **restart your computer**, then open Claude again and type `/onboard`."
-
-Stop here if Git is missing -- the restart is required.
-
-### Note Windows vault default
-On Windows, default the vault location to `Documents\Brain` (i.e., `C:\Users\<username>\Documents\Brain`). This will be used later in Phase 6A if the user does not specify a custom location.
-
-**If Git is present**, proceed to Phase 1.
+Proceed to Phase 1.
 
 ---
 
 ## Phase 1: Permissions
 
-**Before permissions, determine how they use Claude.** The setup path is different in Claude Desktop vs the Claude Code CLI.
+You are running in **Claude Code on the web**. Your vault is a Git repository of Markdown files in your cloud workspace, and Claude Code reads and writes those files directly.
 
-AskUserQuestion: "How are you using Claude right now?"
-Options:
-- Claude Desktop app (most likely if you downloaded Claude from the web)
-- Claude Code in the terminal / command line
-- Both
+Before anything else, set up permissions so you can work without asking the user to approve every small action.
 
-Record this as `CLAUDE_RUNTIME`.
-
-**If Claude Desktop app:**
-- Tell the user: "You are using the Desktop app, so direct tool connections (like Google Calendar or your task manager) will be set up later through the app's settings by you. I cannot configure those connections myself. I will still create your `.env` file for API-based tools and scripts."
-- Skip `~/.claude/settings.json` edits unless they explicitly say they also use the CLI.
-
-**If Claude Code CLI or Both:**
 Tell the user:
-"Before we get started, I need to set up permissions so I can work without asking you to approve every little thing. I am going to update your Claude Code settings file now."
+"Before we get started, I need to set up permissions so I can work without asking you to approve every little thing. I am going to update your Claude Code settings now."
 
 **Action:** Read `~/.claude/settings.json` (it may not exist yet).
 
@@ -82,7 +48,7 @@ After writing: "Done. Permissions are set. You will not see approval prompts dur
 ---
 
 Give a brief welcome:
-- What this system does (2-3 sentences, plain language: "I am going to build you a personal assistant that lives in a notes folder on your computer. It connects to your calendar, email, and task manager, and runs daily routines to keep you organized.")
+- What this system does (2-3 sentences, plain language: "I am going to build you a personal assistant that lives in a notes vault -- a Git repository of Markdown files in your cloud workspace. It connects to your calendar, email, and task manager, and runs daily routines to keep you organized.")
 - That setup has 4 parts and the first part takes about 20 minutes
 - They can stop at any point and come back
 
@@ -347,12 +313,9 @@ Tell the user what you are about to create before creating it.
 **If running from the repo folder** (no vault detected):
 AskUserQuestion: "Where should I create your notes folder?"
 Options:
-- In my Documents folder (~/Documents/Brain on Mac/Linux, Documents\Brain on Windows)
-- On my Desktop (~/Desktop/Brain)
-- Next to this repo (../Brain)
-- Somewhere else (let me specify)
-
-On Windows, default to `C:\Users\<username>\Documents\Brain` if they choose Documents.
+- Next to this repo in the workspace (../Brain)
+- Inside the workspace root (./Brain)
+- Somewhere else in the workspace (let me specify)
 
 Set `VAULT_PATH` based on their answer.
 
@@ -393,7 +356,7 @@ Skip folders that do not apply based on their answers.
 Read `templates/CLAUDE.md` from this repo as the base. Customize with everything from the interview and web research:
 
 - Replace all placeholders (`[Your Name]`, `[Your Timezone]`, `[YourCompany]`) with real values
-- Replace `[Claude Runtime]` with `Claude Desktop`, `Claude Code CLI`, or `Both`
+- Replace `[Claude Runtime]` with `Claude Code on the web`
 - Fill in company context from research
 - Update daily schedule skeleton with their hours, lunch, meeting window
 - Update integrations section: remove unused tools, add tools they mentioned
@@ -414,11 +377,9 @@ Create `VAULT_PATH/.env` with only the services they selected, commented with in
 
 ### 6D: Local Settings
 
-If `CLAUDE_RUNTIME` includes CLI, write `VAULT_PATH/.claude/settings.local.json` using `examples/settings.local.json` as the base.
+Write `VAULT_PATH/.claude/settings.local.json` using `examples/settings.local.json` as the base.
 
-If `CLAUDE_RUNTIME` includes CLI, update `~/.claude/settings.json` to add any MCP permissions for tools they selected that are not already in the allow list.
-
-If `CLAUDE_RUNTIME` is Desktop only, skip CLI-specific settings files and note in the summary that integrations will be configured later in the app's **Customize** section instead.
+Update `~/.claude/settings.json` to add any MCP permissions for tools they selected that are not already in the allow list.
 
 ### 6E: Skills
 
@@ -426,9 +387,7 @@ If `CLAUDE_RUNTIME` is Desktop only, skip CLI-specific settings files and note i
 
 This is the historical failure mode of this setup: commands kept getting dropped during onboarding because the install list was hand-enumerated and conditional. The fix is to copy the whole folder, not a list.
 
-**The installation path depends on `CLAUDE_RUNTIME`:**
-
-#### If CLI or Both: Auto-Install ALL Commands
+Claude Code on the web auto-discovers `.claude/commands/` files, so installing means copying the whole folder into the vault -- no manual upload step.
 
 1. **Copy every command file, unconditionally.** Create `VAULT_PATH/.claude/commands/` and copy the complete contents of the repo's command folder into it:
    ```
@@ -460,38 +419,6 @@ This is the historical failure mode of this setup: commands kept getting dropped
    This installs an interactive brainstorming skill for thinking through ideas and problems. If the install fails (e.g., Node.js is not available), note it as a task in `Inbox/[YourCompany].md` and continue. Do not block setup on this.
 
 The daily graph sync is already included as Phase 6 of `/eod`; the standalone `/graph-daily` is available for manual runs.
-
-#### If Desktop Only (CoWork): Install ALL, Then Upload
-
-Claude CoWork does not auto-discover `.claude/commands/` files. Skills must be uploaded manually by the user through the **Customize** section in the CoWork app settings, and each needs YAML frontmatter to be recognized. The same golden rule applies: **every command gets copied locally, no subset.**
-
-1. **Copy the CLI versions** (source of truth, and they work if the user later adopts the CLI): same unconditional glob copy as the CLI path above -- `REPO_PATH/.claude/commands/*.md` into `VAULT_PATH/.claude/commands/` (drop `onboard.md`).
-
-2. **Copy the CoWork-formatted versions** so the user has every upload-ready file locally:
-   ```
-   mkdir -p VAULT_PATH/cowork-commands
-   cp REPO_PATH/cowork-commands/*.md VAULT_PATH/cowork-commands/
-   ```
-   `cowork-commands/` already mirrors the complete command set with YAML frontmatter -- copy all of it, never a selection.
-
-3. Tell the user: "Skills in CoWork work a little differently than in the CLI. You upload each one through the app. I will walk you through it, and you have every command saved locally in `cowork-commands/` so nothing gets lost."
-
-4. Walk through uploading, using AskUserQuestion at each step:
-   - "Open the CoWork app settings. Look for the **Customize** section."
-   - "Find the option to add a custom skill or instruction. Click it."
-   - "Upload the file from your vault at `cowork-commands/<file>.md` (or paste its contents)."
-   - Confirm: "Does it show up as an available skill?"
-
-5. Upload in this **order** (this is sequencing, not a subset -- the goal is still to get all of them in). Start with the ones needed to keep going, then daily drivers, then the rest:
-   - `train.md`, `connect.md`, `finish.md` -- needed to continue setup
-   - `morning.md`, `eod.md` -- daily drivers
-   - `handoff.md`, `pickup.md` -- session continuity
-   - `strategy.md` -- most useful on-demand skill
-   - then everything else in `cowork-commands/` (the EOD phase commands, `optimize`, `build-skill`, `learn`, `graph-*`, `daily-note`, `brain-dump`, `monthly-review`)
-
-6. If the user does not want to upload all of them in this sitting, that is fine -- but frame it as "the rest are ready in `cowork-commands/` whenever you want them," and add a task in `Inbox/[YourCompany].md` listing the not-yet-uploaded commands so none are forgotten. Do not silently leave commands out.
-
-7. Add a note in CLAUDE.md under a Skills section: "CoWork skills are uploaded through the **Customize** section. Every command is saved with YAML frontmatter in `cowork-commands/`. To add a new one, upload its file from that folder."
 
 ### 6F: Knowledge Graph Setup
 
@@ -571,43 +498,29 @@ Tell the user what was created (list every folder and file).
 
 Then explain what happens next:
 
-"Your notes folder is built and your instruction manual is customized. Before we continue, open a fresh Claude session in your vault so it picks up your new files. If you are using the CLI, restarting also picks up your new permissions."
+"Your notes folder is built and your instruction manual is customized. Before we continue, start a fresh Claude Code session in your vault so it picks up your new files and permissions."
 
 Walk them through it step by step:
 
-1. "Open Obsidian. If you have not installed it yet, download it from obsidian.md."
-2. "In Obsidian, make sure your vault is the folder at [vault_path]. If this is a brand new setup, choose **Open folder as vault** and pick that folder. If you were already in an existing vault, you can stay right where you are."
-3. "You should see your folder structure in the left sidebar. Take a moment to click around -- these are all just text files."
+1. "Your vault is the folder at [vault_path] in your cloud workspace. All your notes live there as Markdown files."
+2. "Take a moment to browse the folders -- Inbox, Work, Resources, and the rest. These are all just text files Claude Code reads and writes for you."
 
-AskUserQuestion: "Can you see your folders in Obsidian?"
+AskUserQuestion: "Can you see your folders?"
 Options:
 - Yes, I can see Inbox, Work, Resources, etc.
-- I need help installing Obsidian first
+- I do not see them yet
 - Something does not look right
 
 4. Walk through the session handoff explicitly. This is a common sticking point, so be very literal:
 
-   If `CLAUDE_RUNTIME` is Desktop:
    - "Here is exactly what to do next. I will walk you through it one step at a time."
-   - "Step 1: Close this conversation. Click the X or use the menu to close it."
-   - "Step 2: In Claude Desktop, start a brand new conversation."
-   - "Step 3: In the new conversation, click the paperclip or attachment icon and add your vault folder: **[vault_path]**"
-   - "Step 4: Once your vault is attached, type exactly this into the chat: `/train`"
-   - "That is it. `/train` is the next step and it will walk you through how the system works."
-
-   If `CLAUDE_RUNTIME` includes CLI:
-   - "Here is exactly what to do next. I will walk you through it one step at a time."
-   - "Step 1: Close this session. You can type `/exit` or press Ctrl+C."
-   - "Step 2: In your terminal, copy and paste this exact command:"
-     ```
-     cd [vault_path] && claude
-     ```
-   - "Step 3: Once the new session opens, type exactly this: `/train`"
+   - "Step 1: Start a fresh Claude Code session in your vault at **[vault_path]**."
+   - "Step 2: Once the new session opens, type exactly this: `/train`"
    - "That is it. `/train` is the next step and it will walk you through how the system works."
 
    AskUserQuestion: "Do you know what to do next?"
    Options:
-   - Yes, close this and open a new session in my vault, then type /train
+   - Yes, open a new session in my vault, then type /train
    - Can you repeat that?
    - I am confused
 

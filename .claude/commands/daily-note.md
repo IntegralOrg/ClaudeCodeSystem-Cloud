@@ -50,7 +50,7 @@ Create the file at `Work/Daily/TODAY.md`:
 (2-3 sentence recap of the day)
 ```
 
-Use the Write tool (new file, no read-modify-write race).
+Use the Write tool (new file).
 
 ---
 

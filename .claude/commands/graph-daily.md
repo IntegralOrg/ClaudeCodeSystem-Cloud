@@ -17,7 +17,7 @@ find "$VAULT" -name "*.md" -mtime -1
 
 Also check `git diff --name-only --diff-filter=ACM` if the vault is a git repo.
 
-Filter out: `.claude/`, `.obsidian/`, `Graph/` files (those are outputs, not inputs).
+Filter out: `.claude/`, `Graph/` files (those are outputs, not inputs).
 
 If no files changed, report "No changes today" and exit.
 
