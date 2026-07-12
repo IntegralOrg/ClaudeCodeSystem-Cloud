@@ -28,7 +28,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 # Serialize runs so two near-simultaneous session pushes don't race each other.
 concurrency:
@@ -38,11 +37,18 @@ concurrency:
 jobs:
   autosync:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+          # GITHUB_TOKEN cannot push changes to .github/workflows/* (GitHub blocks
+          # self-modifying workflows at the API level, regardless of permissions).
+          # Set a VAULT_AUTOSYNC_TOKEN secret (PAT or App token with the workflow
+          # permission) if sessions need to edit workflow files; otherwise those
+          # branches are skipped and left in place, and everything else still merges.
+          token: ${{ secrets.VAULT_AUTOSYNC_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Merge every side branch into main
         run: |
@@ -58,18 +64,27 @@ jobs:
             git commit --no-edit
           }
 
+          # 0 = pushed. 2 = blocked because the merge touches .github/workflows/*
+          # and our token lacks the workflow permission (retrying cannot help).
+          # 1 = anything else we could not resolve in three attempts.
           push_main() {
+            local out
             # main may move under us if a session pushes mid-run; re-merge and retry.
             for attempt in 1 2 3; do
-              if git push origin main; then return 0; fi
+              if out=$(git push origin main 2>&1); then return 0; fi
+              echo "$out"
+              if echo "$out" | grep -qiE 'refusing to allow|workflows? (permission|scope)'; then
+                return 2
+              fi
               git fetch origin main
               git merge --no-edit -X theirs origin/main || resolve_and_commit
             done
-            echo "::error::Could not push main after 3 attempts"
             return 1
           }
 
           git fetch origin --prune
+
+          hard_fail=0
 
           for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin \
                        | grep -v -E '^origin/(main|HEAD)$'); do
@@ -83,8 +98,32 @@ jobs:
 
             echo "Merging $branch into main"
             git merge --no-ff --no-edit -X theirs "$ref" || resolve_and_commit
-            push_main
-            git push origin --delete "$branch" || true
+
+            rc=0
+            push_main || rc=$?
+
+            if [ "$rc" -eq 0 ]; then
+              git push origin --delete "$branch" || true
+              continue
+            fi
+
+            # This branch could not land. Drop the local merge so it cannot ride
+            # along on the next branch's push, keep the branch alive, and carry on
+            # with the rest -- one bad branch must not block the whole vault.
+            git fetch origin main
+            git reset --hard origin/main
+
+            if [ "$rc" -eq 2 ]; then
+              echo "::warning::Skipped '$branch': it changes .github/workflows/*, which GITHUB_TOKEN is not allowed to push. Add a VAULT_AUTOSYNC_TOKEN repository secret (a PAT or App token with the workflow permission) to let autosync merge it."
+            else
+              hard_fail=1
+              echo "::error::Skipped '$branch': could not push main after 3 attempts."
+            fi
           done
+
+          if [ "$hard_fail" -eq 1 ]; then
+            echo "Vault converged on main, except for the branches flagged above."
+            exit 1
+          fi
 
           echo "Vault is converged on main."
