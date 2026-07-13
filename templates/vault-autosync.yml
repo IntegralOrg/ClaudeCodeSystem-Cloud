@@ -64,6 +64,70 @@ jobs:
             git commit --no-edit
           }
 
+          # `*.md merge=union` (.gitattributes) is what lets parallel sessions append
+          # to the same note without a conflict -- but it applies to the WHOLE file,
+          # including the YAML frontmatter. Two sessions that both bump `updated:`
+          # union-merge into a file with a DUPLICATE `updated:` key, which parses to
+          # the LAST value, i.e. the older date silently wins. Repair the frontmatter
+          # after every merge: collapse duplicate keys, newest date wins, leave the
+          # body union alone. Union is right for the body and wrong for frontmatter.
+          repair_frontmatter() {
+            python3 - <<'PY'
+          import datetime, pathlib, re
+          changed = []
+          for p in pathlib.Path(".").rglob("*.md"):
+              if ".git/" in str(p):
+                  continue
+              try:
+                  text = p.read_text(encoding="utf-8")
+              except Exception:
+                  continue
+              if not text.startswith("---\n"):
+                  continue
+              end = text.find("\n---", 3)
+              if end == -1:
+                  continue
+              fm, rest = text[4:end + 1], text[end + 4:]
+              seen, order = {}, []
+              for ln in fm.split("\n"):
+                  m = re.match(r"^([A-Za-z0-9_-]+):(.*)$", ln)
+                  if not m:
+                      order.append((False, ln)); continue
+                  k, v = m.group(1), m.group(2)
+                  if k in seen:
+                      seen[k].append(v)
+                  else:
+                      seen[k] = [v]; order.append((True, k))
+              if not any(len(v) > 1 for v in seen.values()):
+                  continue
+              out = []
+              for is_key, val in order:
+                  if not is_key:
+                      out.append(val); continue
+                  vs = seen[val]
+                  if len(vs) == 1:
+                      out.append("%s:%s" % (val, vs[0])); continue
+                  # All dates -> newest wins. Otherwise keep main's side (listed
+                  # first by the merge) rather than guessing between two values.
+                  dates = []
+                  for v in vs:
+                      try:
+                          dates.append((datetime.date.fromisoformat(v.strip()), v))
+                      except Exception:
+                          dates = None; break
+                  out.append("%s:%s" % (val, max(dates)[1] if dates else vs[0]))
+              new = "---\n" + "\n".join(out).rstrip("\n") + "\n---" + rest
+              if new != text:
+                  p.write_text(new, encoding="utf-8"); changed.append(str(p))
+          for c in changed:
+              print("repaired frontmatter: %s" % c)
+          PY
+            if ! git diff --quiet; then
+              git add -A
+              git commit -q -m "vault-autosync: repair frontmatter duplicated by union merge"
+            fi
+          }
+
           # 0 = pushed. 2 = blocked because the merge touches .github/workflows/*
           # and our token lacks the workflow permission (retrying cannot help).
           # 1 = anything else we could not resolve in three attempts.
@@ -101,6 +165,7 @@ jobs:
 
             echo "Merging $branch into main"
             git merge --no-ff --no-edit -X theirs "$ref" || resolve_and_commit
+            repair_frontmatter
 
             rc=0
             push_main || rc=$?
