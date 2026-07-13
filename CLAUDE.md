@@ -62,3 +62,14 @@ That is it. **You do NOT need to register the command anywhere in `onboard.md`.*
 ## After setup is complete
 
 This repo is no longer needed. Everything gets copied into the user's vault during `/onboard`. The `/finish` command offers to archive this folder.
+
+---
+
+## Developing THIS repo (Integral team, not vault users)
+
+Everything above is for a user setting up their vault. If you are an Integral developer changing this repo, follow the **Integral development playbook**. This repo is its canonical home:
+
+> `docs/guides/development-process.md`
+> ([permalink](https://github.com/IntegralOrg/ClaudeCodeSystem-Cloud/blob/main/docs/guides/development-process.md))
+
+That file is the **single copy** for every Integral repo. Other repos link to it and must not hold their own copy: it used to be duplicated around, the copies drifted, and the drift silently broke the CodeRabbit loop for months. Fix it here and every repo gets the fix.
