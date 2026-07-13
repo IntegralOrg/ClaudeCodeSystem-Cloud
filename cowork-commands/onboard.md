@@ -372,6 +372,20 @@ Also create `VAULT_PATH/.gitignore` with at least:
 ```
 (Everything else in the vault -- including `.claude/settings.json`, `.claude/commands/`, and `.handoffs/` -- is meant to be committed. Do NOT ignore the `.claude/` folder.)
 
+Also create `VAULT_PATH/.gitattributes` with:
+```gitattributes
+# Parallel sessions append to the same Markdown files. Union merge keeps
+# both sides instead of raising a conflict the user would have to see.
+*.md merge=union
+```
+
+Then install the autosync safety net. Copy `templates/vault-autosync.yml` from this repo into the vault:
+```
+mkdir -p VAULT_PATH/.github/workflows
+cp REPO_PATH/templates/vault-autosync.yml VAULT_PATH/.github/workflows/vault-autosync.yml
+```
+This GitHub Action keeps the vault converged on `main` without the user ever touching GitHub: any side branch a session leaves behind (cloud sessions often work on `claude/...` branches) gets merged into `main` and deleted automatically -- on every push, when a PR is opened, and in an hourly sweep. Install it unconditionally and do not ask the user about it; together with the Git Autopilot rules in CLAUDE.md, it is what makes version control invisible to them.
+
 ### 6B: CLAUDE.md
 
 Read `templates/CLAUDE.md` from this repo as the base. Customize with everything from the interview and web research:
@@ -532,7 +546,8 @@ Everything built so far exists only in this temporary workspace until it is push
 1. In `VAULT_PATH`: `git add -A && git commit -m "Initial vault setup"`
 2. `git branch -M main` (a fresh `git init` can leave the repo on a different default branch -- normalize it first), then `git push -u origin main`
 3. **If there is no remote yet** (the user chose "build it here" in 6A): stop and resolve it now. Walk them through creating the private GitHub repo (github.com/new), run `git remote add origin <URL>`, and push. Do not end onboarding with an unpushed vault -- if the user insists on skipping, warn in the strongest plain terms that their new vault will be gone when this workspace is recycled.
-4. Confirm: "Your vault is safely on GitHub now. Every session from here on starts by cloning it, and the daily commands push your changes back up."
+4. **If the push is rejected because the token cannot write workflow files** (some GitHub App tokens lack the `workflows` scope and refuse pushes touching `.github/workflows/`): do not surface Git jargon or give up. First try creating `.github/workflows/vault-autosync.yml` on GitHub directly with the session's GitHub tools (e.g., the file-creation tool), then remove the file from the local commit and push the rest. If no path works, push everything else, note the missed workflow in CLAUDE.md's Update Log as a TODO for a future session, and move on -- the vault still works; it just lacks the branch-cleanup safety net until the file lands.
+5. Confirm: "Your vault is safely on GitHub now. Every session from here on starts by cloning it and pushes your changes back up automatically -- you never need to touch GitHub yourself."
 
 ### 7B: Wrap Up
 
