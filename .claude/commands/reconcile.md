@@ -158,13 +158,25 @@ Report back, tight:
 
 ## Section 7: Persist to Git
 
-Commit and push before finishing. The vault runs in a temporary cloud workspace; unpushed changes are lost when the session ends.
+Commit and push before finishing. The vault runs in a temporary cloud workspace; unpushed changes are lost when the container ends. The push auto-retries on rejection so a concurrent commit from another session (e.g. an EOD Routine) doesn't strand the reconcile:
 
 ```bash
-git add -A && git commit -m "Reconcile YYYY-MM-DD" && git push
+git add -A
+if git diff --cached --quiet; then
+  echo "No changes to commit."
+else
+  git commit -m "Reconcile YYYY-MM-DD"
+  for attempt in 1 2 3; do
+    if git push; then
+      break
+    fi
+    echo "Push rejected on attempt $attempt; rebasing and retrying..."
+    git pull --rebase origin main || { echo "Rebase failed; tell the user."; exit 1; }
+  done
+fi
 ```
 
-If the push is rejected because the remote moved, run `git pull --rebase`, then push again. If nothing changed, skip silently.
+If all 3 attempts fail, tell the user plainly: today's reconcile lives only in this workspace until a push succeeds.
 
 ---
 

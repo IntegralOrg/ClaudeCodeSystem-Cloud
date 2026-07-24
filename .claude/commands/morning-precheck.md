@@ -94,7 +94,7 @@ Merge subagent findings per task (take the strongest evidence). A finding that t
 
 ## Step 5: Write the state file
 
-Write `Inbox/Morning Precheck.md` (overwrite). Use this shape:
+Ensure the folder exists first (a bare-fresh vault might not have it): `mkdir -p Inbox/`. Then write `Inbox/Morning Precheck.md` (overwrite). Use this shape:
 
 ```markdown
 # Morning Pre-check -- <Weekday, Month D, YYYY>
@@ -125,13 +125,25 @@ The **"In Today.md?"** column is critical: it catches meetings that the previous
 
 ## Step 6: Commit and push
 
-Commit `Inbox/Morning Precheck.md` and any client files you marked done in Step 4:
+Commit `Inbox/Morning Precheck.md` and any client files you marked done in Step 4. This runs headless in an ephemeral container, so the push must retry automatically on rejection -- there is no user around to run `git pull --rebase` manually:
 
 ```bash
-git add -A && git commit -m "Morning precheck YYYY-MM-DD" && git push
+git add -A
+if git diff --cached --quiet; then
+  echo "No changes to commit."
+else
+  git commit -m "Morning precheck YYYY-MM-DD"
+  for attempt in 1 2 3; do
+    if git push; then
+      break
+    fi
+    echo "Push rejected on attempt $attempt; rebasing and retrying..."
+    git pull --rebase origin main || { echo "Rebase failed; aborting."; exit 1; }
+  done
+fi
 ```
 
-The vault runs in a temporary cloud workspace; unpushed changes are lost when the session ends. If the push is rejected because the remote moved, run `git pull --rebase`, then push again. If nothing changed, skip silently.
+The vault runs in a temporary cloud workspace; unpushed changes are lost when the container ends. If all 3 push attempts fail, the state file is stranded -- log it in `## Notes` on the next successful run so `/morning` knows the gap.
 
 ## Step 7: One-line status
 
