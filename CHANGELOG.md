@@ -6,6 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-24] - Add /morning-precheck and /reconcile
+
+Two commands ported into the cloud edition, cloud-native from the start (no local-machine assumptions to strip).
+
+### Added
+- **`/morning-precheck`** (`.claude/commands/morning-precheck.md` + `cowork-commands/morning-precheck.md`) -- headless research pass that runs as a scheduled [Routine](https://code.claude.com/docs/en/routines) in Claude Code on the web (~6:30 AM weekdays), before the interactive `/morning`. Fans out parallel Task-tool subagents against Gmail, Slack, Calendar, and Fathom transcripts to verify what is actually still open; auto-marks HIGH-confidence completions in the client Inbox files; and writes `Inbox/Morning Precheck.md` for `/morning` to consume later that morning. Bakes in three hard-won rules: **done-by-anyone counts** (a teammate resolving the request is done for the user), **full-thread reading** (not just sender-side signals), and **exact-line matching instead of keyword matching** (keyword matches can wrongly check off the wrong task). `AskUserQuestion` is explicitly forbidden -- ambiguous items go to `## Confirm` for `/morning` to ask about later. Auto-retries the push on rejection (3 attempts, `git pull --rebase origin main` between each), since there is no user around to run the rebase manually in a headless Routine.
+- **`/reconcile`** (`.claude/commands/reconcile.md` + `cowork-commands/reconcile.md`) -- interactive light EOD counterpart to `/eod`. Walks the day's time blocks and captures four states per block (done / carried / **skipped** / new-followup) so plan-adherence is honest -- silently dropping missed blocks inflates the metric and hides the pattern the user wants to see. Checks off the client Inbox files, patches Google Calendar with actuals prefixed `[done]` / `[carried]` / `[skipped]` so the calendar becomes a historical record of how time was actually spent, and upserts a row into `Work/Daily/Plan Adherence Log.md` for day-over-day trend visibility. Same 3-attempt push-retry loop, so a concurrent EOD Routine landing between the local commit and push cannot strand the reconcile.
+
+### Design notes
+- Both commands use inline `[YOUR_UTC_OFFSET]` and `[YOUR_IANA_TIMEZONE]` placeholders for timezone (not `.env` vars), matching the repo's existing `[Your Timezone]` / `[Client A]` / `[YourCompany]` customization pattern -- one-time swap when installing, not runtime config.
+- `/morning-precheck` uses `zoneinfo.ZoneInfo(...)` for the Slack look-back timestamp so it resolves to 8:00 AM in the user's real timezone. The cloud container runs UTC by default, so a naive `time.mktime(...timetuple())` would have made "yesterday 8 AM" resolve five hours off for a US-East user.
+- `/morning-precheck` runs `mkdir -p Inbox/` before writing the state file to protect a bare-fresh vault where `/onboard` has not yet created the folder.
+- `/reconcile` is intentionally NOT a Routine candidate. It needs the user present to name exceptions ("which planned blocks did NOT happen?"); a headless variant would either auto-mark everything done (dishonest) or auto-mark everything skipped (useless).
+
+---
+
 ## [2026-07-09] - Git Autopilot: Version Control Becomes Invisible to the User
 
 Users of the cloud edition must never have to think about Git, GitHub, branches, pull requests, or merge conflicts. The biggest delivery risk was divergence: cloud sessions work on harness-assigned `claude/*` branches, stop to ask about PRs, or die without pushing, so changes never reach `main` and parallel sessions fork the vault. This release makes convergence on `main` continuous and self-healing, with three layers:
