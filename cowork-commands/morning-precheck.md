@@ -24,11 +24,19 @@ description: Headless morning pre-check (scheduled Routine): verifies task compl
 
 ## Step 1: Stamp time + window
 
-1. Run `date` and record today's day-of-week + `HH:MM` in `[Your Timezone]`.
-2. **Look-back window start** = 8:00 AM the previous workday (Friday if today is Monday). Compute its Unix timestamp for Slack queries. Cross-platform:
+1. Run `date` and record today's day-of-week + `HH:MM` in your local timezone.
+2. **Look-back window start** = 8:00 AM the previous workday (Friday if today is Monday). Compute its Unix timestamp for Slack queries. The cloud container usually runs in UTC, so anchor the computation to your real timezone explicitly:
 
    ```bash
-   python3 -c "import datetime,time; d=datetime.date.today(); off=3 if d.weekday()==0 else 1; prev=d-datetime.timedelta(days=off); print(int(time.mktime(datetime.datetime.combine(prev, datetime.time(8,0)).timetuple())))"
+   python3 <<'PY'
+   import datetime, zoneinfo
+   TZ = zoneinfo.ZoneInfo("[YOUR_IANA_TIMEZONE]")  # replace with your IANA timezone name, e.g. America/New_York, America/Los_Angeles, Europe/London, Asia/Kolkata
+   today_local = datetime.datetime.now(TZ).date()
+   offset_days = 3 if today_local.weekday() == 0 else 1  # Monday looks back to Friday
+   prev = today_local - datetime.timedelta(days=offset_days)
+   start = datetime.datetime.combine(prev, datetime.time(8, 0), tzinfo=TZ)
+   print(int(start.timestamp()))
+   PY
    ```
 
 ## Step 2: Collect open tasks
