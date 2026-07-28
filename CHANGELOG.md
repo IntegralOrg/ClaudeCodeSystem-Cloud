@@ -6,6 +6,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-28] - Monthly Review v2: The Command Now Repairs the Vault Instead of Reporting On It
+
+`/monthly-review` was a four-question interview bolted to a permission-gated checklist. It asked the user for approval five separate times, marked problems for future attention instead of fixing them, and never touched the two things that actually degrade an agent over time: an unbounded `CLAUDE.md` and a vault whose files have drifted out of any coherent structure.
+
+Field evidence (Beyond Braid "Agent Level Up" call, 2026-07-28, 29:47-32:59): a delivery lead walked a user through the `CLAUDE.md` character count live (31k against the 25k-30k target) and described the monthly review as the thing that "does a diagnostic of how your file's grown and been built over time" -- a diagnostic that did not exist in the shipped command. On the same call, one user had never run the review and another did not know it existed. A third had already hand-patched his own copy with folder-organization checks after a manual cleanup, framing the payoff as "your digital brain and the dots should be more connected versus a bunch of random dots sprawled everywhere." A fourth user's `memory.md` was sitting outside his vault, invisible through months of daily use. A user patching the skill himself is the clearest available signal that the shipped version is under-scoped.
+
+The command is now 8 phases, only one of which is interactive.
+
+### Added
+- **Phase 0: Safety Gate (blocking).** No file is deleted, merged, or moved until the vault is confirmed present in a remote Git backup. Checks repo status, remote configuration, uncommitted work, and unpushed commits. On unsaved work it offers once, in plain language, to make the backup, then **re-verifies `git rev-list --count origin/<branch>..HEAD` after pushing** -- a push can report success and still leave commits behind, and treating the exit code as proof would defeat the entire gate.
+- **SAFE MODE.** When there is no remote, or the user declines the backup, the run continues rather than aborting: every audit, the `CLAUDE.md` repair, the graph rebuild, the personalization audit, and the coaching phase all still run. Only destructive operations are withheld, collected into a "Waiting on your backup" list, and surfaced in the final report. A client with no remote configured must not get a dead command, because they will never run it again.
+- **Phase 4: full knowledge-graph rebuild on every run**, not on request. Ordered deliberately **after** the merge phase; syncing first would index files about to be deleted and leave broken links pointing at them. Reports orphan count (files connected to nothing) as the headline metric, compared against last month.
+- **Phase 5: Personalization Audit.** Asks what would improve this vault for this specific person rather than applying generic hygiene. Diagnoses each unused skill as **undiscovered** (the work still happens manually, so teach it) or **unwanted** (the work never happens, so offer to delete it), measures folder gravity, hunts repeated manual work as slash-command candidates, and checks structure fit -- where documentation and real filing behavior disagree, the documentation is treated as wrong, not the user.
+- **Topical duplicate detection.** Beyond exact-hash and near-filename passes, a third pass finds the same operational fact restated across three or more files. Hashing cannot find this, and it is the drift that actually degrades an agent, because the copies fall out of sync and the agent starts receiving contradictory instructions.
+- **Misplaced agent file detection (Phase 1f).** Searches outside the vault for a stray `memory.md`, `CLAUDE.md`, or memory directory and moves it in, then explains where it was and why it was invisible.
+
+### Changed
+- **Phases 0 through 5 run with no questions asked.** The command no longer requests permission mid-run or presents findings for approval before acting. It fixes, then shows a receipt. The backup gate is what makes unattended repair safe.
+- **The four feedback questions are cut to two and moved from the start of the run to the end.** Asked cold they produce shrugs; asked after the user has seen concrete findings they produce specifics. The "monthly 1-on-1 with your agent" framing is retained; the cold-open interrogation is not.
+- **Phase 6 coaching replaces the old feedback step.** Root-causes the behavior rather than the symptom ("your instructions file grew 6,000 characters because every call added a guideline and nothing ever removed one," not "the file was too big"), teaches two or three concrete habits, then closes the loop by scheduling the preventive routines and building a slash command for the repeated manual work found in Phase 5, during the run. The command's stated goal is to make itself unnecessary: a user who depends on a monthly cleanup has a broken daily loop.
+- **Written throughout for a non-technical reader.** No technical term appears in user-facing output without a plain-language explanation beside it.
+- **Duplicate resolution defaults to merge-preserving-both-facts**, with byte-identical copies deleted outright. Nothing unique is lost, which is what makes the merge safe to perform unattended.
+
+### Fixed
+- **The `CLAUDE.md` growth diagnostic never existed.** Phase 2 now counts characters against the 25,000-30,000 target and, past 30,000, extracts oversized *reference detail* into `Resources/Reference/` files, leaving pointers, then reports before and after. **Guidelines, rules, and preferences are never extracted** -- an instruction that is not loaded into every conversation is not an instruction, so a size fix must not quietly gut the rules to hit a character target.
+- **Nothing was ever actually repaired.** Every phase that previously produced a findings list to review now applies the fix.
+- **Structural drift went unaddressed.** Duplicate files, misfiled notes, empty files and folders, and stale references to concluded work are now found and resolved in Phase 3.
+- **Discovery.** Phase 5a explicitly checks whether the user has ever run the monthly review itself; a first run after many months is treated as the most important finding of the run and routed into coaching.
+
+---
+
 ## [2026-07-24] - Add /morning-precheck and /reconcile
 
 Two commands ported into the cloud edition, cloud-native from the start (no local-machine assumptions to strip).
