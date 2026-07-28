@@ -280,8 +280,14 @@ prevent: an agent holding two incompatible instructions with no way to choose be
 Say plainly which files disagree and what they disagree about. Resolving a contradiction
 requires knowing which version is true, and only the user knows that.
 
-**Stated in three or more files:** consolidate into one canonical home and leave pointers in
-the others.
+**Stated in three or more files:** apply the same agreement test as above, across **every**
+file in the group, before consolidating anything. If they all agree, consolidate into one
+canonical home and leave pointers in the others.
+
+**If any two of them contradict each other, defer the entire group to Phase 6.** Do not
+consolidate the agreeing subset and leave the conflicting files behind: that buries the
+disagreement inside a file the user now trusts as canonical, which is worse than leaving the
+conflict visible where they can see it.
 
 **Choosing the canonical location**, in priority order:
 1. The folder the documented structure says it belongs in.
