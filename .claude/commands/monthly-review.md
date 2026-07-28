@@ -104,14 +104,24 @@ the graph rebuild, the personalization audit, and the coaching phase.
 **Does not run:** deleting any file, merging two files into one, moving a file to a
 different folder, removing a folder.
 
+**This ban is global and applies to every phase, not just Phase 3.** It covers deleting an
+unwanted skill in Phase 6d, archiving dead weight, pruning empty folders, and any other
+destructive action anywhere in this command, **including actions the user explicitly approves
+during Phase 6.** Approval is not a backup. If the user approves a deletion while in SAFE
+MODE, record it in the pending list, tell them it will happen once the vault is backed up,
+and do not perform it.
+
 Everything that would have been destructive gets collected into a "Waiting on your backup"
 list and shown in the Phase 7 report instead.
 
 **Announce SAFE MODE at the start of the run, not just at the end.** One sentence:
 
-> "Heads up: your vault isn't backed up anywhere yet, so I'm going to skip anything that
+> "Heads up: your vault isn't safely backed up right now, so I'm going to skip anything that
 > deletes or moves files. I'll still do the rest, and I'll show you what I'd have cleaned up.
-> I can help you set up a backup at the end."
+> We can sort out the backup at the end."
+
+Word it that way rather than "isn't backed up anywhere," because SAFE MODE also triggers when
+a remote exists but the backup was declined, failed, or could not be verified.
 
 ---
 
@@ -400,7 +410,9 @@ Offer each of these, and perform the ones they approve **during this run**:
    the single most important offer in the phase.
 2. **Build a slash command** for the repeated manual work found in 5c, right now, while they
    are watching.
-3. **Teach the undiscovered skills** from 5a and delete the unwanted ones.
+3. **Teach the undiscovered skills** from 5a and delete the unwanted ones. **Deletion is a
+   destructive action: in SAFE MODE, add it to the pending list instead of performing it,
+   even though the user just approved it** (see Phase 0d).
 4. **Route their answers** from 6b: new preferences into the Assistant Guidelines section of
    CLAUDE.md, tool and automation ideas into `Resources/Reference/System Improvements.md`.
 
@@ -417,8 +429,20 @@ not internal team.
 
 **Present findings for approval before writing any of them down.** This is the third and last
 interaction point (see the top of this file). Attributing a quote to a named client is not a
-vault edit and must never happen unattended. Append approved quotes to
-`[YourCompany]/Testimonials.md` with the quote, name, date, and source. Update the scan date.
+vault edit and must never happen unattended.
+
+**Capture the minimum.** Record the quote itself, who said it, the date, and where it came
+from. Do not copy the surrounding conversation into the vault. **Skip any quote whose meaning
+depends on confidential context** (pricing, contract terms, staffing complaints, anything
+about a third party), because such a quote cannot be used without leaking that context along
+with it.
+
+Append approved quotes to `[YourCompany]/Testimonials.md` with the quote, name, date, and
+source. Update the scan date.
+
+**Approval here means "record it internally." It does not mean the client has agreed to be
+quoted publicly.** Say so when presenting the findings: using any of these externally, in
+marketing or on a website, is a separate decision that may require asking the client.
 
 ### 7b: The receipt
 
