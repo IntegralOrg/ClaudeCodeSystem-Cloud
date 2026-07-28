@@ -12,12 +12,20 @@ knowledge graph, and only at the very end do you talk to the user.
 
 ## How this command works
 
-Phases 0 through 5 run **automatically with no questions asked**. Do not stop to ask
+Phases 1 through 5 run **automatically with no questions asked**. Do not stop to ask
 permission, do not present findings mid-run, do not say "would you like me to fix this?"
 Fix it. The user's time is the scarcest resource in this process, and the vault is backed
 up in git before anything destructive happens (Phase 0 guarantees this).
 
-Phase 6 is the only interactive phase. Phase 7 is the report.
+There are exactly **three** moments where you speak to the user, and no others:
+
+1. **Phase 0**, once, and only when the vault is not already backed up: consent to make the
+   backup.
+2. **Phase 6**, the coaching conversation.
+3. **Phase 7a**, approval of testimonial quotes before they are written down. Attributing a
+   quote to a real client by name is not a vault edit and is never done unattended.
+
+Phase 6 is the only phase that is interactive end to end.
 
 **Assume the user is not technical.** They may not know what a "commit" is, what a
 "knowledge graph" is, or why file size matters. Never use a technical term in output to the
@@ -45,8 +53,16 @@ Run these in order and record the result of each:
 2. `git remote -v` -- is a remote backup configured?
 3. `git branch --show-current` -- what branch are we on?
 4. `git status --porcelain` -- is there unsaved work?
-5. `git rev-list --count origin/<branch>..HEAD` -- are there saved changes that have not
-   been uploaded to the backup yet?
+5. `git rev-parse --abbrev-ref --symbolic-full-name @{upstream}` -- which remote branch does
+   this branch actually track? **Do not assume `origin/<branch>`.** A vault may track a
+   different remote, and a branch with no upstream at all will make the next check fail.
+   If this command errors, there is no upstream: go to **SAFE MODE**.
+6. `git rev-list --count <upstream>..HEAD`, using the value from check 5 -- are there saved
+   changes that have not been uploaded to the backup yet?
+
+**If any of these commands errors, treat the result as "not backed up" and go to SAFE MODE.**
+Never read a failed command as a zero. A zero means verified-safe, and only a command that
+actually ran can mean that.
 
 ### 0b: Decide the mode
 
@@ -55,6 +71,8 @@ Run these in order and record the result of each:
 | Repo, remote configured, nothing unsaved, nothing un-uploaded | **FULL MODE.** Everything is backed up. Proceed to Phase 1. |
 | Unsaved work or un-uploaded changes | Go to 0c. |
 | No remote backup configured | **SAFE MODE.** Go to 0d. |
+| Remote exists but the branch tracks no upstream (check 5 errored) | **SAFE MODE.** Go to 0d. Nothing can confirm the backup is current. |
+| Any check errored for any other reason | **SAFE MODE.** Go to 0d. |
 | Not a git repository | **SAFE MODE.** Go to 0d. |
 
 ### 0c: Offer to make the backup
@@ -66,12 +84,18 @@ Ask the user exactly once, in plain language. Do not explain git. Say something 
 
 If they say yes:
 1. `git add -A`
-2. `git commit -m "Backup before monthly review <today's date>"`
-3. `git push`
-4. **Re-run check 5 from Phase 0a.** A push can report success and still leave commits
-   behind. If `git rev-list --count origin/<branch>..HEAD` is not zero, the backup did NOT
-   work. Drop to SAFE MODE and tell the user the backup failed, in plain language, without
-   a wall of git output.
+2. **Inspect what got staged before committing:** `git diff --cached --name-only`. If that
+   list contains `.env`, anything ending in `.key` or `.pem`, anything named like
+   `credentials` or `secrets`, or any other file that plausibly holds a password or API key,
+   **unstage it** (`git restore --staged <file>`) and add it to `.gitignore` before
+   continuing. This push uploads to a remote server, and **a secret pushed once must be
+   treated as leaked even if it is deleted afterward.** `/onboard` puts `.env` in
+   `.gitignore` for exactly this reason, but never assume that ran correctly.
+3. `git commit -m "Backup before monthly review <today's date>"`
+4. `git push`
+5. **Re-run check 6 from Phase 0a.** A push can report success and still leave commits
+   behind. If the count is not zero, the backup did NOT work. Drop to SAFE MODE and tell the
+   user the backup failed, in plain language, without a wall of git output.
 
 If they say no: drop to SAFE MODE.
 
@@ -158,12 +182,16 @@ anything the agent has learned. Record the exact path if found.
 Three passes, cheapest first.
 
 **Exact duplicates.** Hash every markdown file in the vault:
-```
+```sh
 find . -name "*.md" -not -path "./.git/*" -not -path "./.claude/*" -exec shasum -a 256 {} \;
 ```
-Group by hash. Any group with more than one file is a set of true duplicates. If `shasum` is
-unavailable on the user's platform, fall back to comparing file size plus the first 200
-characters.
+Group by hash. Any group with more than one file is a set of true duplicates.
+
+If `shasum` is unavailable on the user's platform, fall back to a **full byte-for-byte
+comparison** (`cmp -s fileA fileB`). Never fall back to comparing file size plus the first N
+characters: vault notes routinely share an identical frontmatter header and a similar length,
+so a prefix comparison produces false matches, and a false match here **deletes a file the
+user wanted to keep**.
 
 **Near duplicates.** Same or nearly-same filename, or the same H1 title, in different
 folders. Common causes: a file was copied instead of moved, or the same note was created
@@ -228,9 +256,19 @@ For each group found in 1g:
 
 **Byte-identical files:** keep the copy in the correct folder, delete the rest.
 
-**Same topic, different content:** merge into one canonical file, **preserving every unique
-fact from both versions**. Replace the other copies with a link to the canonical file.
-Nothing is lost, which is what makes this safe to do without asking.
+**Same topic, different content, and the two agree:** merge into one canonical file,
+**preserving every unique fact from both versions**. Replace the other copies with a link to
+the canonical file. Nothing is lost, which is what makes this safe to do without asking.
+
+**Same topic, but the two contradict each other** (different values for the same setting,
+different locations for the same file, incompatible steps for the same process): **do not
+merge, and do not pick a winner.** Leave both files in place and carry the conflict into
+Phase 6 for the user to resolve.
+
+Merging contradictory statements would produce exactly the failure this pass exists to
+prevent: an agent holding two incompatible instructions with no way to choose between them.
+Say plainly which files disagree and what they disagree about. Resolving a contradiction
+requires knowing which version is true, and only the user knows that.
 
 **Stated in three or more files:** consolidate into one canonical home and leave pointers in
 the others.
@@ -380,7 +418,11 @@ Offer each of these, and perform the ones they approve **during this run**:
 Run this quietly before reporting. Find the last scan date, then search connected messaging
 workspaces and vault transcripts since that date for positive client feedback ("thank",
 "great job", "love", "amazing", "impressed", "saved us", "game changer"). Filter to clients,
-not internal team. Present findings for approval, then append approved quotes to
+not internal team.
+
+**Present findings for approval before writing any of them down.** This is the third and last
+interaction point (see the top of this file). Attributing a quote to a named client is not a
+vault edit and must never happen unattended. Append approved quotes to
 `[YourCompany]/Testimonials.md` with the quote, name, date, and source. Update the scan date.
 
 ### 7b: The receipt
