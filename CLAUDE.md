@@ -67,9 +67,9 @@ This repo is no longer needed. Everything gets copied into the user's vault duri
 
 ## Developing THIS repo (Integral team, not vault users)
 
-Everything above is for a user setting up their vault. If you are an Integral developer changing this repo, follow the **Integral development playbook**. This repo is its canonical home:
+Everything above is for a user setting up their vault. If you are an Integral developer changing this repo, follow the **Integral development playbook**. It does **not** live here:
 
-> `docs/guides/development-process.md`
-> ([permalink](https://github.com/IntegralOrg/ClaudeCodeSystem-Cloud/blob/main/docs/guides/development-process.md))
+> **`How We Ship`** — Brain vault, `Work/Engineering/Developer Guide - How We Ship.md`,
+> published company-wide to the **Integral Brain** shared drive under `Engineering/`.
 
-That file is the **single copy** for every Integral repo. Other repos link to it and must not hold their own copy: it used to be duplicated around, the copies drifted, and the drift silently broke the CodeRabbit loop for months. Fix it here and every repo gets the fix.
+That is the single copy for every Integral repo. Repos link to it and must not hold their own: it used to be duplicated around, the copies drifted, and the drift silently broke the CodeRabbit loop for months. This repo held one of those copies at `docs/guides/development-process.md` until 2026-08-05 — it is gone, because vault-setup tooling is not where an engineering playbook belongs.
