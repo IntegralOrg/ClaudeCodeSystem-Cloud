@@ -31,7 +31,7 @@ Work the order. A move or rename ALWAYS requires checking inbound links via the 
 
 - `root_clutter` and `unknown_folder`: read the file (skim is fine), pick the destination from the schema's folder purposes, `mkdir -p` if needed, `mv` it. If no folder fits, the closest general-purpose folder wins (e.g., `Resources/Reference/`); note the mismatch for Step 5.
 - `exact_duplicates`: keep the copy whose folder the schema endorses (tie-break: most recently modified); `stage` the rest. When both copies sit in the SAME folder, mtime lies (the stray copy is usually newer): keep the one whose name the index or inbound links already know, falling back to git creation date. Repoint links from staged copies to the keeper.
-- `empty_stubs`: read each before acting. `stage` only the genuinely contentless (template header only, no information). A tiny body that carries real information (an ID, a number, a link) is content, not a stub: keep the file and expand it minimally (frontmatter plus a one-line context sentence) so it stops flagging.
+- `empty_stubs`: read each before acting. `stage` only the genuinely contentless (template header only, no information). A tiny body that carries real information (an ID, a number, a link) is content, not a stub: keep the file and expand it minimally (frontmatter plus a one-line context sentence) so it stops flagging. The script already excludes `no_merge` records from this list (staging or expanding one would be a rewrite, and records are never rewritten), so nothing under a `no_merge` folder appears here.
 - `missing_frontmatter`: add minimal frontmatter (`type` per the folder's content, `created` from the file's git or mtime date). Follow CLAUDE.md's frontmatter schema if one is documented; otherwise use `type`/`created` at minimum. The script already excludes `no_merge` records from this list (adding frontmatter is a rewrite, and records are never rewritten), so nothing under a `no_merge` folder appears here.
 - `naming_violations`: rename to satisfy the pattern (derive the date from frontmatter/content), repoint links.
 
@@ -53,7 +53,7 @@ Find clusters: 2+ non-record files whose concepts describe the same thing about 
 
 ## Step 5: Schema feedback
 
-Read the last 3 run entries in `.claude/audit-log.md`. If the same violation keeps recurring in the same direction (same folder, same kind of file, 3+ runs), the schema is wrong, not the vault's content: amend the YAML core (add the folder, adjust the rule) AND append one line to the schema's Amendment Changelog: `- YYYY-MM-DD: <change>. Why: <the recurring pattern>.` Never amend to bless junk (recurring genuine clutter is just fixed again), and never touch `protected` this way. After amending the schema, re-run scan to confirm it still parses before proceeding.
+Read the last 3 run entries in `.claude/audit-log.md`, including each entry's `violations` line (written by Step 6). Group entries by their `kind:folder-or-path:destination-or-rule` tuple: if the same tuple recurs in the same direction across 3+ runs, the schema is wrong, not the vault's content: amend the YAML core (add the folder, adjust the rule) AND append one line to the schema's Amendment Changelog: `- YYYY-MM-DD: <change>. Why: <the recurring pattern>.` Never amend to bless junk (recurring genuine clutter is just fixed again), and never touch `protected` this way. After amending the schema, re-run scan to confirm it still parses before proceeding.
 
 ## Step 6: Receipt
 
@@ -68,13 +68,16 @@ staged: <list or none>
 frontmatter: <count>
 watched: <clusters or none>
 amendments: <list or none>
+violations: <kind:folder-or-path:destination-or-rule, ... or none>
 ```
+
+`violations` is the identity record Step 5 compares across runs: one entry per `root_clutter`, `unknown_folder`, `naming_violations`, `empty_stubs`, or `missing_frontmatter` finding acted on this run, written as `kind:folder-or-path:destination-or-rule` -- e.g. `unknown_folder:Notes/:Resources/Reference/` for a file that landed in a folder the schema doesn't define and got routed to the closest general-purpose folder, or `missing_frontmatter:Resources/Health/:added` for a frontmatter fix. Reuse the exact same tuple wording when the same violation recurs so Step 5 can match it; do not paraphrase the folder or rule differently run to run.
 
 Then report ONE line: `Vault audit: N moved, N merged, N staged, N amendments`. In EOD, that line is the phase status; standalone, print it plus anything surprising.
 
 ## Init (one time per vault)
 
-1. Draft `.claude/vault-schema.md` from CLAUDE.md's folder-structure block plus the real tree (`ls` root and one level down). Include `root_whitelist`, `protected`, `folders` with purposes, `naming` for dated records, `no_merge: true` for records, `frontmatter_required`.
+1. `mkdir -p "$VAULT/.claude"` first (a fresh vault has no `.claude/` yet, and the schema, index, and trash state all live under it). Then draft `.claude/vault-schema.md` from CLAUDE.md's folder-structure block plus the real tree (`ls` root and one level down). Include `root_whitelist`, `protected`, `folders` with purposes, `naming` for dated records, `no_merge: true` for records, `frontmatter_required`.
 2. **Derive `protected` by convention, do not ask for it.** Default protected paths: generated-output folders (anything a command overwrites wholesale, e.g. `Inbox/Today.md`'s parent if the vault renders it), `Archive/`, `Attachments/`, `Templates/`, `.claude/` and any other dot-folder, `.handoffs/`. This is a non-technical user's vault -- a raw "which paths should I protect" question is a technical question they can't answer well. Instead, ask **at most one** plain-language question:
 
    > "Are there folders I should never reorganize, like a private journal? I will still keep them tidy if you want, just never merge or rewrite them."

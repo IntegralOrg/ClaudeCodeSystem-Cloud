@@ -270,10 +270,13 @@ def structural_checks(vault, schema, files):
         if exact and exact.get("naming"):
             if not naming_regex(str(exact["naming"])).match(stem):
                 findings["naming_violations"].append(rel)
+        # Records under a no_merge folder are never merged, split, or
+        # rewritten, so neither check below fires for them: adding
+        # frontmatter is a rewrite, and staging/expanding a stub is too.
+        if is_protected(rel, no_merge):
+            continue
         keys, body = read_frontmatter_keys_and_body(full)
-        # Records under a no_merge folder are never rewritten, so a missing
-        # frontmatter key there is not something the audit fixes by writing.
-        if required and not all(k in keys for k in required) and not is_protected(rel, no_merge):
+        if required and not all(k in keys for k in required):
             findings["missing_frontmatter"].append(rel)
         if len("".join(body.split())) < 40 and (now - os.path.getmtime(full)) > 3 * 86400:
             findings["empty_stubs"].append(rel)
@@ -348,8 +351,8 @@ def stage_files(vault, rels):
             sys.stderr.write("warning: skipping %s (protected)\n" % rel)
             continue
         src = os.path.join(vault, rel)
-        if not os.path.exists(src):
-            sys.stderr.write("warning: skipping %s (does not exist)\n" % rel)
+        if not os.path.isfile(src):
+            sys.stderr.write("warning: skipping %s (not a regular file)\n" % rel)
             continue
         # All checks passed, stage the file. Preserve the relative directory
         # structure under the dated trash dir instead of flattening the path
