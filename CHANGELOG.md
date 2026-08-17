@@ -6,6 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-08-17] - Add /vault-audit: Nightly Self-Healing Vault Hygiene
+
+`/monthly-review` catches structural drift once a month, after it has already made the vault harder to search. Nothing ran nightly, so a misfiled file or an unmerged duplicate could sit for weeks before the next full pass found it.
+
+### Added
+- **`/vault-audit`** (`.claude/commands/vault-audit.md` + `cowork-commands/vault-audit.md`) -- six-step nightly hygiene pass, fully autonomous: it fixes what it finds and never asks for approval mid-run. Splits the work deliberately: `templates/scripts/vault-audit.py` (stdlib-only Python, copied into the vault at `scripts/vault-audit.py`) owns everything deterministic -- walking the tree, hashing files for change detection, staging removals, purging week-old trash -- while Claude owns everything semantic -- does a file's content match its folder, do two files describe the same thing closely enough to merge, is the schema itself wrong. Neither is safe alone: a script has no notion of meaning, and free-form judgment without a script drifts as fast as the vault it's meant to fix.
+- **`.claude/vault-schema.md`** -- the per-vault design contract the audit enforces: a machine-parsed YAML block (root whitelist, protected paths, folder purposes and naming patterns, `no_merge` record folders, required frontmatter) plus prose canonical-home rules. The audit can amend its own YAML when the same misfile recurs 3+ nights running, with every amendment logged to a changelog inside the file -- the schema self-corrects instead of needing a human to notice it's stale.
+- **Removals are staged, never deleted.** Every file the audit would remove goes to `.claude/audit-trash/<date>/` first and is purged automatically after 7 days, so a bad call is a `mv` away from reversible, not a `git revert` away.
+- **`/eod` Phase 5.5** -- runs the nightly audit after tomorrow's plan is built. Makes its own pre-audit checkpoint commit (`git commit -m "pre-audit checkpoint"`) immediately before invoking the command, so the audit itself never has to touch git and every change it makes in a session is trivially revertable.
+- **`/onboard` Phase 6A** -- writes the vault's first `.claude/vault-schema.md` right after the folder structure is created, and copies `templates/scripts/vault-audit.py` into the new vault. Deliberately asks **at most one** plain-language question during setup ("Are there folders I should never reorganize, like a private journal?") -- protected paths are otherwise derived by convention (`Archive/`, `Attachments/`, `Templates/`, dot-folders, generated-output files), never interrogated out of a non-technical user one path at a time.
+
+### Design notes
+- Three refinements earned the hard way and worth calling out for anyone extending the command: the exact-duplicate tie-break falls back to the canonically-named file (not raw mtime) when both copies land in the same schema-endorsed folder, since a fresh accidental copy is usually the *newer* file, not the real one; empty-looking stubs get read in full before staging, because a two-line file can still carry a load-bearing fact (an ID, a date, a link); and any workflow that edits a file's content and then reindexes it must `scan` before `update-row`, never after, or the stored hash goes stale and the file re-flags on the very next run.
+
+---
+
 ## [2026-07-28] - Monthly Review v2: The Command Now Repairs the Vault Instead of Reporting On It
 
 `/monthly-review` was a four-question interview bolted to a permission-gated checklist. It asked the user for approval five separate times, marked problems for future attention instead of fixing them, and never touched the two things that actually degrade an agent over time: an unbounded `CLAUDE.md` and a vault whose files have drifted out of any coherent structure.

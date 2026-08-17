@@ -1,0 +1,475 @@
+#!/usr/bin/env python3
+"""Vault audit: deterministic hygiene checks + concept-index bookkeeping.
+
+Semantic judgment (concepts, merges) is done by Claude via the
+/vault-audit command; this script never reads meaning, only structure.
+Stdlib only, Python 3.9+.
+"""
+import argparse
+import fnmatch
+import hashlib
+import json
+import os
+import re
+import shutil
+import sys
+import time
+from datetime import date, datetime, timedelta
+
+ALWAYS_PROTECTED = [".git", ".git-cloud", ".claude", ".obsidian", "Attachments",
+                    "node_modules", "cowork-commands", "docs"]
+
+# ---------- schema ----------
+
+def extract_schema_block(md_text):
+    m = re.search(r"```yaml\n(.*?)\n```", md_text, re.S)
+    if not m:
+        raise ValueError("no ```yaml block found in schema file")
+    return m.group(1)
+
+
+def parse_yaml_subset(text):
+    lines = []
+    for raw in text.splitlines():
+        if not raw.strip() or raw.lstrip().startswith("#"):
+            continue
+        indent = len(raw) - len(raw.lstrip(" "))
+        lines.append((indent, raw.strip()))
+    value, _ = _parse_block(lines, 0, 0)
+    return value
+
+
+def _parse_scalar(s):
+    s = s.strip()
+    if s.startswith("[") and s.endswith("]"):
+        inner = s[1:-1].strip()
+        return [_parse_scalar(x) for x in inner.split(",")] if inner else []
+    if len(s) >= 2 and s[0] == s[-1] and s[0] in "\"'":
+        return s[1:-1]
+    if s == "true":
+        return True
+    if s == "false":
+        return False
+    try:
+        return int(s)
+    except ValueError:
+        return s
+
+
+def _parse_block(lines, pos, indent):
+    if pos >= len(lines):
+        return {}, pos
+    is_list = lines[pos][1].startswith("- ")
+    result = [] if is_list else {}
+    while pos < len(lines):
+        ind, content = lines[pos]
+        if ind < indent:
+            break
+        if ind > indent:
+            raise ValueError("unexpected indent at: " + content)
+        if is_list:
+            if not content.startswith("- "):
+                break
+            item = content[2:].strip()
+            if ":" in item and not item.startswith("["):
+                key, _, val = item.partition(":")
+                obj = {key.strip(): _parse_scalar(val)}
+                pos += 1
+                while pos < len(lines) and lines[pos][0] > ind:
+                    k2, _, v2 = lines[pos][1].partition(":")
+                    obj[k2.strip()] = _parse_scalar(v2)
+                    pos += 1
+                result.append(obj)
+            else:
+                result.append(_parse_scalar(item))
+                pos += 1
+        else:
+            key, _, val = content.partition(":")
+            if val.strip():
+                result[key.strip()] = _parse_scalar(val)
+                pos += 1
+            else:
+                pos += 1
+                if pos < len(lines) and lines[pos][0] > ind:
+                    sub, pos = _parse_block(lines, pos, lines[pos][0])
+                else:
+                    sub = None
+                result[key.strip()] = sub
+    return result, pos
+
+
+def load_schema(vault):
+    path = os.path.join(vault, ".claude", "vault-schema.md")
+    if not os.path.exists(path):
+        raise ValueError("schema missing: " + path)
+    with open(path, encoding="utf-8") as f:
+        return parse_yaml_subset(extract_schema_block(f.read()))
+
+
+# ---------- walking + index ----------
+
+def is_protected(rel, protected):
+    rel = rel.replace(os.sep, "/").rstrip("/")
+    for p in list(protected or []) + ALWAYS_PROTECTED:
+        p = str(p).rstrip("/")
+        if rel == p or rel.startswith(p + "/"):
+            return True
+    return False
+
+
+def walk_vault(vault, protected):
+    out = []
+    for root, dirs, files in os.walk(vault):
+        rel_root = os.path.relpath(root, vault).replace(os.sep, "/")
+        if rel_root == ".":
+            rel_root = ""
+        dirs[:] = [d for d in sorted(dirs)
+                   if not is_protected((rel_root + "/" + d).lstrip("/"), protected)]
+        for f in sorted(files):
+            if not f.endswith(".md"):
+                continue
+            rel = (rel_root + "/" + f).lstrip("/")
+            if not is_protected(rel, protected):
+                out.append(rel)
+    return sorted(out)
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _index_path(vault):
+    return os.path.join(vault, ".claude", "vault-index.json")
+
+
+def load_index(vault):
+    path = _index_path(vault)
+    if not os.path.exists(path):
+        return {"meta": {}, "files": {}, "watched_clusters": []}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_index(vault, index):
+    index["meta"]["last_run"] = date.today().isoformat()
+    path = _index_path(vault)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(index, f, indent=1, ensure_ascii=False, sort_keys=True)
+    os.replace(tmp, path)
+
+
+def refresh_index(vault, index, files):
+    added, changed, deleted = [], [], []
+    current = set(files)
+    for rel in files:
+        h = sha256_file(os.path.join(vault, rel))
+        row = index["files"].get(rel)
+        if row is None:
+            index["files"][rel] = {"hash": h, "concept": "", "entities": [],
+                                   "verdict": "", "stale": True}
+            added.append(rel)
+        elif row.get("hash") != h:
+            row["hash"] = h
+            row["stale"] = True
+            changed.append(rel)
+    for rel in sorted(index["files"]):
+        if rel not in current:
+            del index["files"][rel]
+            deleted.append(rel)
+    index["watched_clusters"] = [c for c in index.get("watched_clusters", [])
+                                 if all(p in index["files"] for p in c)]
+    return added, changed, deleted
+
+
+# ---------- structural checks ----------
+
+def naming_regex(pattern):
+    esc = re.escape(pattern)
+    esc = esc.replace("YYYY", r"\d{4}").replace("MM", r"\d{2}").replace("DD", r"\d{2}")
+    esc = esc.replace(r"\*", ".*")
+    return re.compile("^" + esc + "$")
+
+
+def _segment_matches(dirpath, pattern):
+    """Check if dirpath matches pattern using segment-aware fnmatch.
+
+    Both dirpath and pattern are split on "/" and fnmatch is applied
+    per-segment. This prevents * from spanning directory boundaries.
+    """
+    dir_segs = dirpath.split("/")
+    pat_segs = pattern.split("/")
+    if len(dir_segs) != len(pat_segs):
+        return False
+    for d, p in zip(dir_segs, pat_segs):
+        if not fnmatch.fnmatch(d, p):
+            return False
+    return True
+
+
+def matching_folder(dirpath, folders, exact=False):
+    best, best_len = None, -1
+    for entry in folders or []:
+        pat = str(entry.get("path", "")).rstrip("/")
+        if not pat:
+            continue
+        if exact:
+            if _segment_matches(dirpath, pat) and len(pat) > best_len:
+                best, best_len = entry, len(pat)
+            continue
+        cur = dirpath
+        while cur:
+            if _segment_matches(cur, pat):
+                if len(pat) > best_len:
+                    best, best_len = entry, len(pat)
+                break
+            parent = os.path.dirname(cur)
+            if parent == cur:
+                break
+            cur = parent
+    return best
+
+
+def read_frontmatter_keys_and_body(path):
+    with open(path, encoding="utf-8", errors="replace") as f:
+        text = f.read()
+    if text.startswith("---\n"):
+        end = text.find("\n---", 4)
+        if end != -1:
+            fm = text[4:end]
+            keys = [ln.partition(":")[0].strip() for ln in fm.splitlines()
+                    if ":" in ln and not ln.startswith((" ", "-", "#"))]
+            return keys, text[end + 4:]
+    return [], text
+
+
+def structural_checks(vault, schema, files):
+    findings = {"root_clutter": [], "unknown_folder": [], "naming_violations": [],
+                "missing_frontmatter": [], "empty_stubs": []}
+    whitelist = set(schema.get("root_whitelist") or [])
+    folders = schema.get("folders") or []
+    required = schema.get("frontmatter_required") or []
+    now = time.time()
+    for rel in files:
+        full = os.path.join(vault, rel)
+        d = os.path.dirname(rel)
+        name = os.path.basename(rel)
+        stem = name[:-3]
+        if d == "":
+            if name not in whitelist:
+                findings["root_clutter"].append(rel)
+            continue
+        if matching_folder(d, folders) is None:
+            findings["unknown_folder"].append(rel)
+        exact = matching_folder(d, folders, exact=True)
+        if exact and exact.get("naming"):
+            if not naming_regex(str(exact["naming"])).match(stem):
+                findings["naming_violations"].append(rel)
+        keys, body = read_frontmatter_keys_and_body(full)
+        if required and not all(k in keys for k in required):
+            findings["missing_frontmatter"].append(rel)
+        if len("".join(body.split())) < 40 and (now - os.path.getmtime(full)) > 3 * 86400:
+            findings["empty_stubs"].append(rel)
+    return findings
+
+
+def find_exact_duplicates(vault, files):
+    by_hash = {}
+    for rel in files:
+        by_hash.setdefault(sha256_file(os.path.join(vault, rel)), []).append(rel)
+    return [sorted(v) for v in by_hash.values() if len(v) > 1]
+
+
+def no_merge_paths(schema):
+    return [f["path"] for f in (schema.get("folders") or []) if f.get("no_merge")]
+
+
+# ---------- links, staging, purge ----------
+
+WIKILINK = re.compile(r"\[\[([^\]|#]+)")
+
+
+def inbound_links(vault, targets, files):
+    stems = {}
+    for t in targets:
+        stems[os.path.splitext(os.path.basename(t))[0]] = t
+    result = {t: [] for t in targets}
+    for rel in files:
+        if rel in targets:
+            continue
+        try:
+            with open(os.path.join(vault, rel), encoding="utf-8", errors="replace") as f:
+                text = f.read()
+        except OSError:
+            continue
+        hits = set()
+        for m in WIKILINK.finditer(text):
+            name = m.group(1).strip()
+            if name in stems:
+                hits.add(stems[name])
+        for t in hits:
+            result[t].append(rel)
+    return result
+
+
+def stage_files(vault, rels):
+    schema = load_schema(vault)
+    protected = schema.get("protected", [])
+    dest_dir = os.path.join(vault, ".claude", "audit-trash", date.today().isoformat())
+    os.makedirs(dest_dir, exist_ok=True)
+    index = load_index(vault)
+    for rel in rels:
+        # Validation checks
+        if not rel.endswith(".md"):
+            sys.stderr.write("warning: skipping %s (not .md)\n" % rel)
+            continue
+        if ".." in rel or os.path.isabs(rel):
+            sys.stderr.write("warning: skipping %s (contains .. or is absolute)\n" % rel)
+            continue
+        if is_protected(rel, protected):
+            sys.stderr.write("warning: skipping %s (protected)\n" % rel)
+            continue
+        src = os.path.join(vault, rel)
+        if not os.path.exists(src):
+            sys.stderr.write("warning: skipping %s (does not exist)\n" % rel)
+            continue
+        # All checks passed, stage the file
+        shutil.move(src, os.path.join(dest_dir, rel.replace("/", "__")))
+        index["files"].pop(rel, None)
+    index["watched_clusters"] = [c for c in index.get("watched_clusters", [])
+                                 if all(p in index["files"] for p in c)]
+    save_index(vault, index)
+
+
+def purge_trash(vault, days=7):
+    base = os.path.join(vault, ".claude", "audit-trash")
+    if not os.path.isdir(base):
+        return 0
+    cutoff = date.today() - timedelta(days=days)
+    n = 0
+    for name in sorted(os.listdir(base)):
+        try:
+            d = datetime.strptime(name, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if d < cutoff:
+            shutil.rmtree(os.path.join(base, name))
+            n += 1
+    return n
+
+
+def apply_row_update(vault, rel, concept, entities, verdict):
+    index = load_index(vault)
+    row = index["files"].get(rel)
+    if row is None:
+        raise SystemExit("not in index: " + rel)
+    row["concept"] = concept or row["concept"]
+    if entities is not None:
+        row["entities"] = entities
+    if verdict is not None:
+        row["verdict"] = verdict
+    row["stale"] = False
+    save_index(vault, index)
+
+
+# ---------- CLI ----------
+
+def cmd_scan(args):
+    schema = load_schema(args.vault)
+    protected = schema.get("protected", [])
+    purged = purge_trash(args.vault)
+    files = walk_vault(args.vault, protected)
+    index = load_index(args.vault)
+    added, changed, deleted = refresh_index(args.vault, index, files)
+    save_index(args.vault, index)
+    order = structural_checks(args.vault, schema, files)
+    order.update({
+        "added": added, "changed": changed, "deleted": deleted,
+        "exact_duplicates": find_exact_duplicates(args.vault, files),
+        "stale": sorted(r for r, row in index["files"].items() if row.get("stale")),
+        "watched_clusters": index.get("watched_clusters", []),
+        "no_merge_paths": no_merge_paths(schema),
+        "trash_purged": purged, "file_count": len(files),
+    })
+    print(json.dumps(order, indent=1, ensure_ascii=False))
+
+
+def cmd_links(args):
+    schema = load_schema(args.vault)
+    files = walk_vault(args.vault, schema.get("protected", []))
+    print(json.dumps(inbound_links(args.vault, args.files, files),
+                     indent=1, ensure_ascii=False))
+
+
+def cmd_stage(args):
+    stage_files(args.vault, args.files)
+    print("staged: " + ", ".join(args.files))
+
+
+def cmd_update_row(args):
+    entities = None
+    if args.entities is not None:
+        entities = [e.strip() for e in args.entities.split(",") if e.strip()]
+    apply_row_update(args.vault, args.file, args.concept, entities, args.verdict)
+
+
+def cmd_bulk_update(args):
+    with open(args.json, encoding="utf-8") as f:
+        rows = json.load(f)
+    index = load_index(args.vault)
+    for r in rows:
+        row = index["files"].get(r["file"])
+        if row is None:
+            continue
+        row["concept"] = r.get("concept", row["concept"])
+        row["entities"] = r.get("entities", row["entities"])
+        row["verdict"] = r.get("verdict", row["verdict"])
+        row["stale"] = False
+    save_index(args.vault, index)
+    print("updated %d rows" % len(rows))
+
+
+def cmd_watch(args):
+    index = load_index(args.vault)
+    cluster = sorted(args.files)
+    if cluster not in index["watched_clusters"]:
+        index["watched_clusters"].append(cluster)
+    save_index(args.vault, index)
+    print("watching: " + ", ".join(cluster))
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    sub = p.add_subparsers(dest="cmd", required=True)
+    for name, fn, extra in [
+        ("scan", cmd_scan, []),
+        ("links", cmd_links, ["files"]),
+        ("stage", cmd_stage, ["files"]),
+        ("watch", cmd_watch, ["files"]),
+    ]:
+        sp = sub.add_parser(name)
+        sp.add_argument("--vault", required=True)
+        if extra:
+            sp.add_argument("files", nargs="+")
+        sp.set_defaults(func=fn)
+    sp = sub.add_parser("update-row")
+    sp.add_argument("--vault", required=True)
+    sp.add_argument("--file", required=True)
+    sp.add_argument("--concept", default=None)
+    sp.add_argument("--entities", default=None)
+    sp.add_argument("--verdict", default=None)
+    sp.set_defaults(func=cmd_update_row)
+    sp = sub.add_parser("bulk-update")
+    sp.add_argument("--vault", required=True)
+    sp.add_argument("--json", required=True)
+    sp.set_defaults(func=cmd_bulk_update)
+    args = p.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
