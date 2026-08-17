@@ -17,7 +17,7 @@ Hard rules:
 - Never touch anything under a `protected` path or a non-markdown file.
 - Never `rm` a vault file: removals go through the `stage` subcommand.
 - Records (files under `no_merge` folders) are never merged, split, or rewritten.
-- This command never runs git itself. In vaults using the EOD pipeline, `/eod` makes a pre-audit checkpoint commit right before invoking this command (see its Phase 5.5), so every change this run makes is trivially revertable. If you're running this standalone outside `/eod`, commit your own checkpoint first.
+- This command never runs git itself. In vaults using the EOD pipeline, `/eod` makes a pre-audit checkpoint commit right before invoking this command (see its Phase 5.5), so every change this run makes is trivially revertible. If you're running this standalone outside `/eod`, commit your own checkpoint first.
 
 ## Setup
 
@@ -37,7 +37,7 @@ Work the order. A move or rename ALWAYS requires checking inbound links via the 
 - `root_clutter` and `unknown_folder`: read the file (skim is fine), pick the destination from the schema's folder purposes, `mkdir -p` if needed, `mv` it. If no folder fits, the closest general-purpose folder wins (e.g., `Resources/Reference/`); note the mismatch for Step 5.
 - `exact_duplicates`: keep the copy whose folder the schema endorses (tie-break: most recently modified); `stage` the rest. When both copies sit in the SAME folder, mtime lies (the stray copy is usually newer): keep the one whose name the index or inbound links already know, falling back to git creation date. Repoint links from staged copies to the keeper.
 - `empty_stubs`: read each before acting. `stage` only the genuinely contentless (template header only, no information). A tiny body that carries real information (an ID, a number, a link) is content, not a stub: keep the file and expand it minimally (frontmatter plus a one-line context sentence) so it stops flagging.
-- `missing_frontmatter`: add minimal frontmatter (`type` per the folder's content, `created` from the file's git or mtime date). Follow CLAUDE.md's frontmatter schema if one is documented; otherwise use `type`/`created` at minimum.
+- `missing_frontmatter`: add minimal frontmatter (`type` per the folder's content, `created` from the file's git or mtime date). Follow CLAUDE.md's frontmatter schema if one is documented; otherwise use `type`/`created` at minimum. The script already excludes `no_merge` records from this list (adding frontmatter is a rewrite, and records are never rewritten), so nothing under a `no_merge` folder appears here.
 - `naming_violations`: rename to satisfy the pattern (derive the date from frontmatter/content), repoint links.
 
 ## Step 3: Semantic re-index
