@@ -293,10 +293,21 @@ def no_merge_paths(schema):
 WIKILINK = re.compile(r"\[\[([^\]|#]+)")
 
 
+def _link_forms(target):
+    """All wikilink text forms that should resolve to this target: the bare
+    basename stem, plus every path-qualified suffix ending at the stem
+    (e.g. for Resources/Reference/Server Logins.md: 'Server Logins',
+    'Reference/Server Logins', 'Resources/Reference/Server Logins')."""
+    stem_path = target[:-3] if target.endswith(".md") else target
+    parts = stem_path.split("/")
+    return ["/".join(parts[i:]) for i in range(len(parts))]
+
+
 def inbound_links(vault, targets, files):
-    stems = {}
+    forms = {}
     for t in targets:
-        stems[os.path.splitext(os.path.basename(t))[0]] = t
+        for form in _link_forms(t):
+            forms[form] = t
     result = {t: [] for t in targets}
     for rel in files:
         if rel in targets:
@@ -309,11 +320,27 @@ def inbound_links(vault, targets, files):
         hits = set()
         for m in WIKILINK.finditer(text):
             name = m.group(1).strip()
-            if name in stems:
-                hits.add(stems[name])
+            if name in forms:
+                hits.add(forms[name])
         for t in hits:
             result[t].append(rel)
     return result
+
+
+def _unique_dest(dest_dir, name):
+    """Return a destination path under dest_dir for name, appending
+    -2, -3, ... before the extension if name already exists there so a
+    flattened-name collision never silently overwrites a prior staged file."""
+    dest = os.path.join(dest_dir, name)
+    if not os.path.exists(dest):
+        return dest
+    stem, ext = os.path.splitext(name)
+    i = 2
+    while True:
+        candidate = os.path.join(dest_dir, "%s-%d%s" % (stem, i, ext))
+        if not os.path.exists(candidate):
+            return candidate
+        i += 1
 
 
 def stage_files(vault, rels):
@@ -338,7 +365,8 @@ def stage_files(vault, rels):
             sys.stderr.write("warning: skipping %s (does not exist)\n" % rel)
             continue
         # All checks passed, stage the file
-        shutil.move(src, os.path.join(dest_dir, rel.replace("/", "__")))
+        dest = _unique_dest(dest_dir, rel.replace("/", "__"))
+        shutil.move(src, dest)
         index["files"].pop(rel, None)
     index["watched_clusters"] = [c for c in index.get("watched_clusters", [])
                                  if all(p in index["files"] for p in c)]

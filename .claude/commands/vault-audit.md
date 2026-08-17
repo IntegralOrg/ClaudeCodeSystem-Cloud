@@ -27,7 +27,7 @@ Run `scan --vault "$VAULT"` and read the JSON work order. It already purged old 
 
 ## Step 2: Deterministic fixes
 
-Work the order. For every move or rename, first check whether the filename changes; wiki-links (`[[Note Name]]`) are basename-based, so only a basename change needs link repointing (get inbound files with `links`, then edit each `[[Old Name]]` to `[[New Name]]`).
+Work the order. A move or rename ALWAYS requires checking inbound links via the `links` subcommand, never just when the basename changes: many vaults use path-qualified wiki-links (`[[Resources/Reference/Server Logins]]`, `[[Reference/Server Logins]]`), and any of those forms breaks when the file's path changes even if the basename stays the same. `links` matches both the bare basename and any path-qualified suffix ending at the stem, so it will surface these. Repoint any link whose target no longer resolves, fixing both the basename and the path portion of the link as needed (edit each `[[Old Path/Old Name]]` or `[[Old Name]]` to the file's new location).
 
 - `root_clutter` and `unknown_folder`: read the file (skim is fine), pick the destination from the schema's folder purposes, `mkdir -p` if needed, `mv` it. If no folder fits, the closest general-purpose folder wins (e.g., `Resources/Reference/`); note the mismatch for Step 5.
 - `exact_duplicates`: keep the copy whose folder the schema endorses (tie-break: most recently modified); `stage` the rest. When both copies sit in the SAME folder, mtime lies (the stray copy is usually newer): keep the one whose name the index or inbound links already know, falling back to git creation date. Repoint links from staged copies to the keeper.
@@ -45,7 +45,7 @@ Batch the writes: build a JSON array `[{"file":..., "concept":..., "entities":[.
 
 ## Step 4: Fragmentation sweep (full vault, every night)
 
-Read `.claude/vault-index.json` concepts (they are one-liners; the whole index fits in context). Also re-examine every `watched_clusters` entry.
+Read a concepts-only projection of `.claude/vault-index.json` (path, concept, entities, verdict per row), e.g. via a python one-liner, rather than the raw JSON. Also re-examine every `watched_clusters` entry.
 
 Find clusters: 2+ non-record files whose concepts describe the same thing about the same entity. For each cluster apply the confidence bar: same concept AND same entity AND same purpose.
 - **Clear duplicate concept**: merge into the canonical home per the schema's canonical-home rules. Read every file in the cluster; the merged file must preserve EVERY unique fact from every source. `stage` the losers, repoint inbound links to the keeper, `update-row` the keeper.
@@ -53,7 +53,7 @@ Find clusters: 2+ non-record files whose concepts describe the same thing about 
 
 ## Step 5: Schema feedback
 
-Read the last 3 run entries in `.claude/audit-log.md`. If the same violation keeps recurring in the same direction (same folder, same kind of file, 3+ runs), the schema is wrong, not the vault's content: amend the YAML core (add the folder, adjust the rule) AND append one line to the schema's Amendment Changelog: `- YYYY-MM-DD: <change>. Why: <the recurring pattern>.` Never amend to bless junk (recurring genuine clutter is just fixed again), and never touch `protected` this way.
+Read the last 3 run entries in `.claude/audit-log.md`. If the same violation keeps recurring in the same direction (same folder, same kind of file, 3+ runs), the schema is wrong, not the vault's content: amend the YAML core (add the folder, adjust the rule) AND append one line to the schema's Amendment Changelog: `- YYYY-MM-DD: <change>. Why: <the recurring pattern>.` Never amend to bless junk (recurring genuine clutter is just fixed again), and never touch `protected` this way. After amending the schema, re-run scan to confirm it still parses before proceeding.
 
 ## Step 6: Receipt
 
