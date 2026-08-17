@@ -253,7 +253,6 @@ def structural_checks(vault, schema, files):
     whitelist = set(schema.get("root_whitelist") or [])
     folders = schema.get("folders") or []
     required = schema.get("frontmatter_required") or []
-    no_merge = no_merge_paths(schema)
     now = time.time()
     for rel in files:
         full = os.path.join(vault, rel)
@@ -273,7 +272,7 @@ def structural_checks(vault, schema, files):
         # Records under a no_merge folder are never merged, split, or
         # rewritten, so neither check below fires for them: adding
         # frontmatter is a rewrite, and staging/expanding a stub is too.
-        if is_protected(rel, no_merge):
+        if is_record(d, schema):
             continue
         keys, body = read_frontmatter_keys_and_body(full)
         if required and not all(k in keys for k in required):
@@ -292,6 +291,19 @@ def find_exact_duplicates(vault, files):
 
 def no_merge_paths(schema):
     return [f["path"] for f in (schema.get("folders") or []) if f.get("no_merge")]
+
+
+def is_record(dirpath, schema):
+    """True if dirpath (or an ancestor) belongs to a no_merge folder.
+
+    Uses matching_folder's segment-aware ancestor walk rather than plain
+    prefix matching, so wildcard patterns like Work/Clients/*/Transcripts
+    correctly match a real path such as Work/Clients/Acme/Transcripts.
+    is_protected()-style prefix matching never matches those, since "*"
+    isn't a literal path segment any real directory can prefix-equal.
+    """
+    entry = matching_folder(dirpath, schema.get("folders") or [])
+    return bool(entry and entry.get("no_merge"))
 
 
 # ---------- links, staging, purge ----------
