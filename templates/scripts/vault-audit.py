@@ -282,9 +282,14 @@ def structural_checks(vault, schema, files):
     return findings
 
 
-def find_exact_duplicates(vault, files):
+def find_exact_duplicates(vault, files, schema):
+    # Records under a no_merge folder are never staged, merged, or
+    # repointed, so they never enter duplicate repair (same reasoning as
+    # the stub/frontmatter exclusions in structural_checks).
     by_hash = {}
     for rel in files:
+        if is_record(os.path.dirname(rel), schema):
+            continue
         by_hash.setdefault(sha256_file(os.path.join(vault, rel)), []).append(rel)
     return [sorted(v) for v in by_hash.values() if len(v) > 1]
 
@@ -423,7 +428,7 @@ def cmd_scan(args):
     order = structural_checks(args.vault, schema, files)
     order.update({
         "added": added, "changed": changed, "deleted": deleted,
-        "exact_duplicates": find_exact_duplicates(args.vault, files),
+        "exact_duplicates": find_exact_duplicates(args.vault, files, schema),
         "stale": sorted(r for r, row in index["files"].items() if row.get("stale")),
         "watched_clusters": index.get("watched_clusters", []),
         "no_merge_paths": no_merge_paths(schema),

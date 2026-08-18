@@ -17,7 +17,8 @@ Hard rules:
 - Never touch anything under a `protected` path or a non-markdown file.
 - Never `rm` a vault file: removals go through the `stage` subcommand.
 - Records (files under `no_merge` folders) are never merged, split, or rewritten.
-- This command never runs git itself. In vaults using the EOD pipeline, `/eod` makes a pre-audit checkpoint commit right before invoking this command (see its Phase 5.5), so every change this run makes is trivially revertible. If you're running this standalone outside `/eod`, commit your own checkpoint first.
+- This command never runs git itself. In vaults using the EOD pipeline, `/eod` makes a pre-audit checkpoint commit right before invoking this command (see its Phase 5.5), so every edit this run makes to the live vault is trivially revertible. If you're running this standalone outside `/eod`, commit your own checkpoint first.
+- **The trash purge is the one exception to that revertibility.** `scan` permanently deletes `.claude/audit-trash/` day-folders older than 7 days -- files staged by EARLIER runs, which no pre-audit checkpoint of the current run can restore. Recovery window: a staged file sits under `.claude/audit-trash/YYYY-MM-DD/` for 7 days and can be restored by moving it back out; after purge it is gone (vaults that commit `.claude/audit-trash/` can still recover it from git history). Every purge is recorded in the receipt (Step 6 `trash_purged`).
 
 ## Setup
 
@@ -34,8 +35,10 @@ Run `scan --vault "$VAULT"` and read the JSON work order. It already purged old 
 
 Work the order. A move or rename ALWAYS requires checking inbound links via the `links` subcommand, never just when the basename changes: many vaults use path-qualified wiki-links (`[[Resources/Reference/Server Logins]]`, `[[Reference/Server Logins]]`), and any of those forms breaks when the file's path changes even if the basename stays the same. `links` matches both the bare basename and any path-qualified suffix ending at the stem, so it will surface these. Repoint any link whose target no longer resolves, fixing both the basename and the path portion of the link as needed (edit each `[[Old Path/Old Name]]` or `[[Old Name]]` to the file's new location).
 
+Collision rule for EVERY `mv` (moves from `root_clutter`/`unknown_folder`/`belongs:` verdicts, renames from `naming_violations`): check whether the destination path already exists before moving, and never overwrite an existing note with a bare `mv`. If the destination file is byte-identical to the incoming one, handle the pair under the `exact_duplicates` rule instead; if it differs, keep both by moving the incoming file under a distinguishing name (e.g. `Name (from Notes).md`), note the collision for Step 5, and let Step 4's merge bar decide whether they become one file.
+
 - `root_clutter` and `unknown_folder`: read the file (skim is fine), pick the destination from the schema's folder purposes, `mkdir -p` if needed, `mv` it. If no folder fits, the closest general-purpose folder wins (e.g., `Resources/Reference/`); note the mismatch for Step 5.
-- `exact_duplicates`: keep the copy whose folder the schema endorses (tie-break: most recently modified); `stage` the rest. When both copies sit in the SAME folder, mtime lies (the stray copy is usually newer): keep the one whose name the index or inbound links already know, falling back to git creation date. Repoint links from staged copies to the keeper.
+- `exact_duplicates`: keep the copy whose folder the schema endorses (tie-break: most recently modified); `stage` the rest. When both copies sit in the SAME folder, mtime lies (the stray copy is usually newer): keep the one whose name the index or inbound links already know, falling back to git creation date. Repoint links from staged copies to the keeper. The script already excludes `no_merge` records from duplicate candidates (a record is never staged, merged, or repointed), so nothing under a `no_merge` folder appears here.
 - `empty_stubs`: read each before acting. `stage` only the genuinely contentless (template header only, no information). A tiny body that carries real information (an ID, a number, a link) is content, not a stub: keep the file and expand it minimally (frontmatter plus a one-line context sentence) so it stops flagging. The script already excludes `no_merge` records from this list (staging or expanding one would be a rewrite, and records are never rewritten), so nothing under a `no_merge` folder appears here.
 - `missing_frontmatter`: add minimal frontmatter (`type` per the folder's content, `created` from the file's git or mtime date). Follow CLAUDE.md's frontmatter schema if one is documented; otherwise use `type`/`created` at minimum. The script already excludes `no_merge` records from this list (adding frontmatter is a rewrite, and records are never rewritten), so nothing under a `no_merge` folder appears here.
 - `naming_violations`: rename to satisfy the pattern (derive the date from frontmatter/content), repoint links.
@@ -70,6 +73,7 @@ moved: <list or none>
 renamed: <list or none>
 merged: <keeper <- losers, or none>
 staged: <list or none>
+trash_purged: <day-folder count from the scan output, or 0>
 frontmatter: <count>
 watched: <clusters or none>
 amendments: <list or none>
