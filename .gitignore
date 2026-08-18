@@ -29,3 +29,10 @@ __pycache__/
 .idea/
 *.swp
 *.swo
+
+# PUBLIC REPO SAFETY BACKSTOP
+# This repo is public and ships to clients. `brainstorming` and `writing-plans`
+# write client-specific specs and plans into docs/superpowers/ by default.
+# Internal process/SOP work belongs in the Brain vault (Integral/SOPs/), not here.
+docs/superpowers/
+.handoffs/

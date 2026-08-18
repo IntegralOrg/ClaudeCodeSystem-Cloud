@@ -1,5 +1,23 @@
 # ClaudeCodeSystem Setup Repo
 
+> ## THIS REPOSITORY IS PUBLIC AND SHIPS TO CLIENTS
+>
+> Everything committed here is world-readable and lands in client hands. Verify with
+> `gh repo view IntegralOrg/ClaudeCodeSystem-Cloud --json visibility` before doubting it.
+>
+> **Never write into this repo:** client names paired with their systems or security posture, PR
+> numbers or their findings, vulnerabilities, credentials, plan or billing state, developer names,
+> internal headcount or revenue plans, or any Integral internal process document.
+>
+> **Internal process and SOP work belongs in the Brain vault** (`Integral/SOPs/`), never here. This
+> holds even if a handoff or a previous session names this repo as "the canonical home" for a
+> document. A recorded decision is not evidence of visibility.
+>
+> `docs/superpowers/` is gitignored here as a backstop, because `brainstorming` and `writing-plans`
+> write client-specific specs and plans into that path by default.
+>
+> Only generic, portable, client-facing methodology belongs in this repo.
+
 This is the setup repository for the Claude Code Personal Assistant System. It is NOT a vault -- it contains the templates, examples, and setup commands used to build a vault.
 
 ## If the user opens Claude Code in this folder

@@ -365,6 +365,20 @@ Create the structure at `VAULT_PATH`:
 
 Skip folders that do not apply based on their answers.
 
+**Give the vault a schema.** `/vault-audit` (installed in 6E) keeps the vault tidy every night, but it needs a design contract to enforce. `mkdir -p VAULT_PATH/.claude VAULT_PATH/scripts` first -- a fresh vault has neither yet, and both are about to be written to. Write `VAULT_PATH/.claude/vault-schema.md` now, while the folder structure is still fresh from the answers above. Its format is documented in `.claude/commands/vault-audit.md`'s Init section -- a YAML block with `version`, `root_whitelist` (the files allowed to sit at vault root, e.g. `CLAUDE.md`, `CHANGELOG.md`, `README.md`), `protected`, `folders` (one entry per folder above with a one-line purpose, `naming` for dated records, `no_merge: true` for folders that should be filed but never merged or rewritten), and `frontmatter_required` (usually `[type, created]`).
+
+Derive `protected` by convention, do not interrogate the user for it: `Archive/`, `Attachments/`, `Templates/`, `.claude/` and any other dot-folder, `.handoffs/`, and any generated-output file the system overwrites wholesale (e.g. `Inbox/Today.md`). That covers nearly every vault. The only thing worth asking is one plain-language question, folded into this phase rather than a separate interrogation:
+
+AskUserQuestion: "Are there any folders I should never reorganize, like a private journal? I will still keep them tidy if you want, just never merge or rewrite them."
+Options:
+- No, nothing like that
+- Yes, keep it tidy but never rewrite it (they name the folder)
+- Yes, never touch it at all (they name the folder)
+
+Map the answer: "keep tidy but never rewrite" -> mark that folder `no_merge: true` in the schema (filed and indexed, never merged or rewritten). "Never touch it at all" -> add it to `protected` (skipped entirely). Everything else about the schema -- folder purposes, naming patterns -- write from the structure above and correct it later; `/vault-audit`'s own Step 5 self-amends the schema when it sees the same misfile pattern 3+ nights running, so an imperfect first draft is fine.
+
+Also copy the audit script into the vault: `mkdir -p VAULT_PATH/scripts && cp REPO_PATH/templates/scripts/vault-audit.py VAULT_PATH/scripts/vault-audit.py`.
+
 Also create `VAULT_PATH/.gitignore` with at least:
 ```gitignore
 .env
@@ -445,7 +459,7 @@ Claude Code on the web auto-discovers `.claude/commands/` files, so installing m
    - **Session continuity (the backbone of context/task management):** `handoff.md`, `pickup.md`. A single Claude session has a finite context window; once it fills (or the user runs `/clear`, closes the window, or hits compaction), everything not written down is lost. `/handoff` checkpoints the live thread of work into `VAULT_PATH/.handoffs/<name>.md`; `/pickup` reloads it in the next session. They double as a track record of in-flight workstreams.
    - **Decision-making + improvement:** `strategy.md`, `optimize.md`, `build-skill.md`, `learn.md`
    - **Knowledge graph:** `graph-sync.md`, `graph-daily.md`
-   - **Daily drivers + EOD pipeline:** `morning.md`, `eod.md`, and the phase-split EOD commands `eod-gather.md`, `eod-sync.md`, `eod-time.md`, `eod-note.md`, `eod-today.md` (`/eod` and the phase commands reference each other -- shipping only some of them breaks the pipeline mid-run, which is exactly how commands "disappear after the user runs a slash command")
+   - **Daily drivers + EOD pipeline:** `morning.md`, `eod.md`, and the phase-split EOD commands `eod-gather.md`, `eod-sync.md`, `eod-time.md`, `eod-note.md`, `eod-today.md` (`/eod` and the phase commands reference each other -- shipping only some of them breaks the pipeline mid-run, which is exactly how commands "disappear after the user runs a slash command"). `vault-audit.md` belongs here too -- `/eod` Phase 5.5 invokes it every night, and its `init` mode is what wrote `.claude/vault-schema.md` back in 6A.
    - **Other utilities:** `daily-note.md`, `brain-dump.md`, `monthly-review.md`
 
 2. **Then customize the tool-specific ones in place** with their specific tools, clients, and schedule. Customization happens *after* installation and never affects whether a file is installed:
