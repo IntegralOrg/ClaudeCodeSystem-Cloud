@@ -479,7 +479,7 @@ Claude Code on the web auto-discovers `.claude/commands/` files, so installing m
    ```
    The first registers the plugin's GitHub repo as a marketplace; the second installs the plugin from it. After it installs, have them restart Claude Code (or run `/reload-plugins`) so the skills load. It installs at the user level (`~/.claude/plugins/`), so it is available in every project, not just this vault.
 
-   **The general pattern (for adding any custom plugin later):** `/plugin marketplace add <github-owner/repo>` registers a *marketplace* (the repo must be a plugin marketplace, meaning it contains a `.claude-plugin/marketplace.json`), then `/plugin install <plugin-name>@<marketplace-name>` installs a plugin from that marketplace. Whenever we publish a plugin, we will give them the marketplace repo and the plugin name to swap in. Only ever add marketplaces you trust.
+   **The general pattern (for adding any custom plugin later):** `/plugin marketplace add <github-owner/repo>` registers a *marketplace* (the repo must be a plugin marketplace, meaning it contains a `.claude-plugin/marketplace.json`), then `/plugin install <plugin-name>@<marketplace-name>` installs a plugin from that marketplace (the `<marketplace-name>` comes from the marketplace's manifest and can differ from the repo name). Whenever we publish a plugin, we will give them the exact marketplace repo, plugin name, and marketplace name to use. Only ever add marketplaces you trust.
 
    Confirm with the user that the skills show up after restart. If `/plugin` is not available in the interface they are using (it is a Claude Code feature; Desktop/CoWork may differ), or the install fails, note it as a task in `Inbox/[YourCompany].md` and continue. Do not block setup on this.
 
