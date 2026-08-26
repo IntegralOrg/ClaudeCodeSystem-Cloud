@@ -466,11 +466,18 @@ Claude Code on the web auto-discovers `.claude/commands/` files, so installing m
 
 3b. **If the user also uses Claude Cowork:** copy `REPO_PATH/cowork-commands/` into `VAULT_PATH/cowork-commands/` (all of it -- same golden rule). These are the same commands with the YAML frontmatter Cowork needs; the user uploads them through Cowork's **Customize** section whenever they want a skill available there. Do not walk through uploads during onboarding -- just tell them the folder exists and every file in it is upload-ready.
 
-4. **Install the Brainstorming community skill.** Run in the vault directory:
+4. **Install the Superpowers plugin.** Superpowers is a community plugin that adds a library of high-leverage skills (brainstorming an idea into a spec, systematic debugging, writing plans, test-driven development, and more). It installs as a custom Claude Code plugin, which you add by pointing Claude Code at its GitHub repo.
+
+   Run these two commands in an interactive Claude Code session:
    ```
-   npx skills add https://github.com/obra/superpowers --skill brainstorming
+   /plugin marketplace add obra/superpowers-marketplace
+   /plugin install superpowers@superpowers-marketplace
    ```
-   This installs an interactive brainstorming skill for thinking through ideas and problems. If the install fails (e.g., Node.js is not available), note it as a task in `Inbox/[YourCompany].md` and continue. Do not block setup on this.
+   The first command registers the plugin's GitHub repo as a marketplace; the second installs the plugin from it. After it installs, restart Claude Code (or run `/reload-plugins`) so the skills load. The plugin installs at the user level (`~/.claude/plugins/`), so it is available in every project, not just this vault.
+
+   **This is the general pattern for adding any custom plugin:** `/plugin marketplace add <github-owner/repo>` to register the repo as a marketplace, then `/plugin install <plugin-name>@<marketplace-name>` to install it. Any plugin we or a teammate publish to a GitHub repo is added the same way, just swap in that repo's link.
+
+   If the install fails, or `/plugin` is not available in the interface they are using (it is a Claude Code CLI feature), note it as a task in `Inbox/[YourCompany].md` and continue. Do not block setup on this.
 
 The daily graph sync is already included as Phase 6 of `/eod`; the standalone `/graph-daily` is available for manual runs.
 
