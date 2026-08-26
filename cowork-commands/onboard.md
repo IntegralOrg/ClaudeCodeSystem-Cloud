@@ -482,7 +482,7 @@ Claude Code on the web auto-discovers `.claude/commands/` files, so installing m
    ```
    The first command registers the plugin's GitHub repo as a marketplace; the second installs the plugin from it. After it installs, restart Claude Code (or run `/reload-plugins`) so the skills load. The plugin installs at the user level (`~/.claude/plugins/`), so it is available in every project, not just this vault.
 
-   **This is the general pattern for adding any custom plugin:** `/plugin marketplace add <github-owner/repo>` to register the repo as a marketplace, then `/plugin install <plugin-name>@<marketplace-name>` to install it. Any plugin we or a teammate publish to a GitHub repo is added the same way, just swap in that repo's link.
+   **This is the general pattern for adding a custom plugin:** `/plugin marketplace add <github-owner/repo>` registers a *marketplace* (the repo you point at must be a plugin marketplace, meaning it contains a `.claude-plugin/marketplace.json`), then `/plugin install <plugin-name>@<marketplace-name>` installs a plugin from that marketplace. Whenever we publish a plugin, we will give you the marketplace repo to add and the plugin name to install, so you just swap those in. Only ever add marketplaces you trust.
 
    If the install fails, or `/plugin` is not available in the interface they are using (it is a Claude Code CLI feature), note it as a task in `Inbox/[YourCompany].md` and continue. Do not block setup on this.
 
