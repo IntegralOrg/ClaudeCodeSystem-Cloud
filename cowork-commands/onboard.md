@@ -471,11 +471,22 @@ Claude Code on the web auto-discovers `.claude/commands/` files, so installing m
 
 3b. **If the user also uses Claude Cowork:** copy `REPO_PATH/cowork-commands/` into `VAULT_PATH/cowork-commands/` (all of it -- same golden rule). These are the same commands with the YAML frontmatter Cowork needs; the user uploads them through Cowork's **Customize** section whenever they want a skill available there. Do not walk through uploads during onboarding -- just tell them the folder exists and every file in it is upload-ready.
 
-4. **Install the Brainstorming community skill.** Run in the vault directory:
+4. **Install the Superpowers plugin (the USER runs this, not you).** Superpowers is a community plugin that adds a library of high-leverage skills (brainstorming an idea into a spec, systematic debugging, writing plans, test-driven development, and more). It installs as a custom Claude Code plugin.
+
+   **You cannot install it for them.** `/plugin` is an interactive slash command that only works when the user types it into the Claude Code chat input themselves; it is not a tool you can call, and it does not run from `/onboard`. Your job here is to hand them the exact commands, explain the trust note, and confirm it worked, not to run anything.
+
+   **Give them this trust note first:** plugins can run code on their machine with their user permissions, so they should only add marketplaces from a source they trust. Superpowers (`obra/superpowers-marketplace`) is the one we recommend and use. If their company restricts which plugins or marketplaces can be installed, they should get sign-off first.
+
+   Then tell the user to type these two commands themselves, one at a time, directly into the chat input (as slash commands, not as a message to you):
+   ```text
+   /plugin marketplace add obra/superpowers-marketplace
+   /plugin install superpowers@superpowers-marketplace
    ```
-   npx skills add https://github.com/obra/superpowers --skill brainstorming
-   ```
-   This installs an interactive brainstorming skill for thinking through ideas and problems. If the install fails (e.g., Node.js is not available), note it as a task in `Inbox/[YourCompany].md` and continue. Do not block setup on this.
+   The first registers the plugin's GitHub repo as a marketplace; the second installs the plugin from it. After it installs, have them restart Claude Code (or run `/reload-plugins`) so the skills load. It installs at the user level (`~/.claude/plugins/`), so it is available in every project, not just this vault.
+
+   **The general pattern (for adding any custom plugin later):** `/plugin marketplace add <github-owner/repo>` registers a *marketplace* (the repo must be a plugin marketplace, meaning it contains a `.claude-plugin/marketplace.json`), then `/plugin install <plugin-name>@<marketplace-name>` installs a plugin from that marketplace (the `<marketplace-name>` comes from the marketplace's manifest and can differ from the repo name). Whenever we publish a plugin, we will give them the exact marketplace repo, plugin name, and marketplace name to use. Only ever add marketplaces you trust.
+
+   Confirm with the user that the skills show up after restart. If `/plugin` is not available in the interface they are using (it is a Claude Code feature; Desktop/CoWork may differ), or the install fails, note it as a task in `Inbox/[YourCompany].md` and continue. Do not block setup on this.
 
 The daily graph sync is already included as Phase 6 of `/eod`; the standalone `/graph-daily` is available for manual runs.
 
