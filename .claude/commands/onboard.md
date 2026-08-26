@@ -468,8 +468,10 @@ Claude Code on the web auto-discovers `.claude/commands/` files, so installing m
 
 4. **Install the Superpowers plugin.** Superpowers is a community plugin that adds a library of high-leverage skills (brainstorming an idea into a spec, systematic debugging, writing plans, test-driven development, and more). It installs as a custom Claude Code plugin, which you add by pointing Claude Code at its GitHub repo.
 
+   **Before you install:** plugins can run code on your machine with your user permissions, so only add marketplaces from a source you trust. Superpowers (`obra/superpowers-marketplace`) is the one we recommend and use. If your company restricts which plugins or marketplaces can be installed, get sign-off first.
+
    Run these two commands in an interactive Claude Code session:
-   ```
+   ```text
    /plugin marketplace add obra/superpowers-marketplace
    /plugin install superpowers@superpowers-marketplace
    ```
