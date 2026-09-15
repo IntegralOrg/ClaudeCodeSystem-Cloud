@@ -17,7 +17,15 @@ import time
 from datetime import date, datetime, timedelta
 
 ALWAYS_PROTECTED = [".git", ".git-cloud", ".claude", ".obsidian", "Attachments",
-                    "node_modules", "cowork-commands"]
+                    "node_modules", "cowork-commands", "_generated"]
+
+# The audit's own operational files (schema, index, staged trash) live here,
+# deliberately OUT of .claude/. Cloud `acceptEdits` auto-approves Edit/Write
+# everywhere in the working dir EXCEPT under .claude/ (settings/hooks/commands
+# can escalate the session), so a scheduled cloud routine that writes its
+# receipt/schema there stalls on a permission prompt every run. _generated/ is
+# both audit-protected (never swept) and auto-approved, so writes flow silently.
+HYGIENE_DIR = os.path.join("_generated", "vault-hygiene")
 
 # ---------- schema ----------
 
@@ -99,7 +107,7 @@ def _parse_block(lines, pos, indent):
 
 
 def load_schema(vault):
-    path = os.path.join(vault, ".claude", "vault-schema.md")
+    path = os.path.join(vault, HYGIENE_DIR, "vault-schema.md")
     if not os.path.exists(path):
         raise ValueError("schema missing: " + path)
     with open(path, encoding="utf-8") as f:
@@ -143,7 +151,7 @@ def sha256_file(path):
 
 
 def _index_path(vault):
-    return os.path.join(vault, ".claude", "vault-index.json")
+    return os.path.join(vault, HYGIENE_DIR, "vault-index.json")
 
 
 def load_index(vault):
@@ -157,6 +165,7 @@ def load_index(vault):
 def save_index(vault, index):
     index["meta"]["last_run"] = date.today().isoformat()
     path = _index_path(vault)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(index, f, indent=1, ensure_ascii=False, sort_keys=True)
@@ -353,7 +362,7 @@ def inbound_links(vault, targets, files):
 def stage_files(vault, rels):
     schema = load_schema(vault)
     protected = schema.get("protected", [])
-    dest_dir = os.path.join(vault, ".claude", "audit-trash", date.today().isoformat())
+    dest_dir = os.path.join(vault, HYGIENE_DIR, "audit-trash", date.today().isoformat())
     os.makedirs(dest_dir, exist_ok=True)
     index = load_index(vault)
     for rel in rels:
@@ -385,7 +394,7 @@ def stage_files(vault, rels):
 
 
 def purge_trash(vault, days=7):
-    base = os.path.join(vault, ".claude", "audit-trash")
+    base = os.path.join(vault, HYGIENE_DIR, "audit-trash")
     if not os.path.isdir(base):
         return 0
     cutoff = date.today() - timedelta(days=days)
@@ -417,7 +426,32 @@ def apply_row_update(vault, rel, concept, entities, verdict):
 
 # ---------- CLI ----------
 
+# Files that used to live under .claude/ before the 2026-09 relocation.
+_LEGACY_HYGIENE = ["vault-schema.md", "vault-index.json", "audit-log.md", "audit-trash"]
+
+
+def migrate_legacy_hygiene(vault):
+    """One-time move of pre-relocation audit state from .claude/ into
+    _generated/vault-hygiene/. A no-op once migrated (or on a fresh vault with
+    no legacy state), so it is safe to call on every scan. Returns the list of
+    item names moved."""
+    new_dir = os.path.join(vault, HYGIENE_DIR)
+    # If the new location already has a schema, we have already migrated.
+    if os.path.exists(os.path.join(new_dir, "vault-schema.md")):
+        return []
+    moved = []
+    for name in _LEGACY_HYGIENE:
+        src = os.path.join(vault, ".claude", name)
+        dst = os.path.join(new_dir, name)
+        if os.path.exists(src) and not os.path.exists(dst):
+            os.makedirs(new_dir, exist_ok=True)
+            shutil.move(src, dst)
+            moved.append(name)
+    return moved
+
+
 def cmd_scan(args):
+    migrate_legacy_hygiene(args.vault)
     schema = load_schema(args.vault)
     protected = schema.get("protected", [])
     purged = purge_trash(args.vault)

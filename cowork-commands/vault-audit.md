@@ -5,7 +5,7 @@ description: Nightly self-healing vault hygiene -- fixes misfiled files, merges 
 
 # Vault Audit: Daily Self-Healing Hygiene
 
-Keeps the vault matching its own design contract (`.claude/vault-schema.md`). Fully autonomous: it fixes what it finds, stages removals into `.claude/audit-trash/` (never deletes), and never asks for approval mid-run.
+Keeps the vault matching its own design contract (`_generated/vault-hygiene/vault-schema.md`). Fully autonomous: it fixes what it finds, stages removals into `_generated/vault-hygiene/audit-trash/` (never deletes), and never asks for approval mid-run.
 
 **Why this exists:** vaults drift. Files land in the wrong folder, near-duplicate notes pile up, frontmatter goes missing, half-written stubs sit untouched for weeks. A monthly cleanup only catches this after months of decay have already made the vault harder to search and the agent's answers less reliable. This command catches the same drift every night, in minutes, by splitting the work two ways: a small deterministic script handles structure (walking the tree, hashing files, staging removals, purging old trash) and Claude handles judgment (does this file's content match its folder, do two files describe the same thing, is the schema itself wrong). Neither one is safe alone -- the script has no idea what a file means, and free-form judgment without a script drifts just as fast as the vault it's supposed to fix.
 
@@ -18,14 +18,14 @@ Hard rules:
 - Never `rm` a vault file: removals go through the `stage` subcommand.
 - Records (files under `no_merge` folders) are never merged, split, or rewritten.
 - This command never runs git itself. In vaults using the EOD pipeline, `/eod` makes a pre-audit checkpoint commit right before invoking this command (see its Phase 5.5), so every edit this run makes to the live vault is trivially revertible. If you're running this standalone outside `/eod`, commit your own checkpoint first.
-- **The trash purge is the one exception to that revertibility.** `scan` permanently deletes `.claude/audit-trash/` day-folders older than 7 days -- files staged by EARLIER runs, which no pre-audit checkpoint of the current run can restore. Recovery window: a staged file sits under `.claude/audit-trash/YYYY-MM-DD/` for 7 days and can be restored by moving it back out; after purge it is gone (vaults that commit `.claude/audit-trash/` can still recover it from git history). Every purge is recorded in the receipt (Step 6 `trash_purged`).
+- **The trash purge is the one exception to that revertibility.** `scan` permanently deletes `_generated/vault-hygiene/audit-trash/` day-folders older than 7 days -- files staged by EARLIER runs, which no pre-audit checkpoint of the current run can restore. Recovery window: a staged file sits under `_generated/vault-hygiene/audit-trash/YYYY-MM-DD/` for 7 days and can be restored by moving it back out; after purge it is gone (vaults that commit `_generated/vault-hygiene/audit-trash/` can still recover it from git history). Every purge is recorded in the receipt (Step 6 `trash_purged`).
 
 ## Setup
 
 0. If `scripts/vault-audit.py` is missing in this vault, copy it from the setup repo's `templates/scripts/` folder first: `cp REPO_PATH/templates/scripts/vault-audit.py VAULT_PATH/scripts/vault-audit.py` (locate `REPO_PATH` the same way `/onboard` does; ask the user if you can't find a local clone of the setup repo).
 1. `date` for today.
 2. `VAULT` = vault root (directory containing CLAUDE.md). `AUDIT="python3 \"$VAULT/scripts/vault-audit.py\""`.
-3. If `.claude/vault-schema.md` is missing, stop and run Init instead.
+3. If `_generated/vault-hygiene/vault-schema.md` is missing, check for a legacy `.claude/vault-schema.md` (a vault set up before the 2026-09 relocation). If that exists, run `scan` once first: the script's `migrate_legacy_hygiene` moves the old schema, index, audit log, and staged trash into `_generated/vault-hygiene/`, preserving prior amendments and history. Only if there is no legacy schema either, stop and run Init instead.
 
 ## Step 1: Script pass
 
@@ -53,7 +53,7 @@ Batch the writes: build a JSON array `[{"file":..., "concept":..., "entities":[.
 
 ## Step 4: Fragmentation sweep (full vault, every night)
 
-Read a concepts-only projection of `.claude/vault-index.json` (path, concept, entities, verdict per row), e.g. via a python one-liner, rather than the raw JSON. Also re-examine every `watched_clusters` entry.
+Read a concepts-only projection of `_generated/vault-hygiene/vault-index.json` (path, concept, entities, verdict per row), e.g. via a python one-liner, rather than the raw JSON. Also re-examine every `watched_clusters` entry.
 
 Find clusters: 2+ non-record files whose concepts describe the same thing about the same entity. For each cluster apply the confidence bar: same concept AND same entity AND same purpose.
 - **Clear duplicate concept**: merge into the canonical home per the schema's canonical-home rules. Read every file in the cluster; the merged file must preserve EVERY unique fact from every source. `stage` the losers, repoint inbound links to the keeper, `update-row` the keeper.
@@ -61,11 +61,11 @@ Find clusters: 2+ non-record files whose concepts describe the same thing about 
 
 ## Step 5: Schema feedback
 
-Read the last 3 run entries in `.claude/audit-log.md`, including each entry's `violations` line (written by Step 6). Group entries by their `kind:folder-or-path:destination-or-rule` tuple: if the same tuple recurs in the same direction across 3+ runs, the schema is wrong, not the vault's content: amend the YAML core (add the folder, adjust the rule) AND append one line to the schema's Amendment Changelog: `- YYYY-MM-DD: <change>. Why: <the recurring pattern>.` Never amend to bless junk (recurring genuine clutter is just fixed again), and never touch `protected` this way. After amending the schema, re-run scan to confirm it still parses before proceeding.
+Read the last 3 run entries in `_generated/vault-hygiene/audit-log.md`, including each entry's `violations` line (written by Step 6). Group entries by their `kind:folder-or-path:destination-or-rule` tuple: if the same tuple recurs in the same direction across 3+ runs, the schema is wrong, not the vault's content: amend the YAML core (add the folder, adjust the rule) AND append one line to the schema's Amendment Changelog: `- YYYY-MM-DD: <change>. Why: <the recurring pattern>.` Never amend to bless junk (recurring genuine clutter is just fixed again), and never touch `protected` this way. After amending the schema, re-run scan to confirm it still parses before proceeding.
 
 ## Step 6: Receipt
 
-Append to `.claude/audit-log.md`:
+Append to `_generated/vault-hygiene/audit-log.md` **using the Edit tool** (never `cat >>`/`echo >>`/heredoc: shell write-redirects are not in cloud `acceptEdits`'s auto-approved set, so a scheduled/cloud routine stalls on a permission prompt every run). These files stay OUT of `.claude/` (schema, log, index, and staged trash all live under `_generated/vault-hygiene/`) because cloud auto-approves Edit/Write everywhere in the working dir EXCEPT under `.claude/`, where every write prompts even in cloud:
 
 ```
 ## YYYY-MM-DD
@@ -86,7 +86,7 @@ Then report ONE line: `Vault audit: N moved, N merged, N staged, N amendments`. 
 
 ## Init (one time per vault)
 
-1. `mkdir -p "$VAULT/.claude"` first (a fresh vault has no `.claude/` yet, and the schema, index, and trash state all live under it). Then draft `.claude/vault-schema.md` from CLAUDE.md's folder-structure block plus the real tree (`ls` root and one level down). Include `root_whitelist`, `protected`, `folders` with purposes, `naming` for dated records, `no_merge: true` for records, `frontmatter_required`.
+1. `mkdir -p "$VAULT/_generated/vault-hygiene"` first (the schema, index, and trash state all live under it). Keep these OUT of `.claude/`: cloud `acceptEdits` never auto-approves Edit/Write under `.claude/`, so a scheduled routine would stall on a prompt every run. Then draft `_generated/vault-hygiene/vault-schema.md` from CLAUDE.md's folder-structure block plus the real tree (`ls` root and one level down). Include `root_whitelist`, `protected`, `folders` with purposes, `naming` for dated records, `no_merge: true` for records, `frontmatter_required`. Also create an empty `_generated/vault-hygiene/audit-log.md` (Step 5 reads the last 3 run entries and Step 6 appends to it with the Edit tool, so the file must exist before the first run).
 2. **Derive `protected` by convention, do not ask for it.** Default protected paths: generated-output folders (anything a command overwrites wholesale, e.g. `Inbox/Today.md`'s parent if the vault renders it), `Archive/`, `Attachments/`, `Templates/`, `.claude/` and any other dot-folder, `.handoffs/`. This is a non-technical user's vault -- a raw "which paths should I protect" question is a technical question they can't answer well. Instead, ask **at most one** plain-language question:
 
    > "Are there folders I should never reorganize, like a private journal? I will still keep them tidy if you want, just never merge or rewrite them."

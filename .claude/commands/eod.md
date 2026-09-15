@@ -150,7 +150,7 @@ Report: tomorrow's date, number of meetings, number of tasks selected, any carry
 
 ## 5.5 Vault Audit
 
-Safety checkpoint first: `git add -A && git commit -m "pre-audit checkpoint"` (skip if the tree is clean). Then read `.claude/commands/vault-audit.md` and execute the nightly run. Every removal it makes goes to `.claude/audit-trash/` (kept 7 days), so any surprise is recoverable.
+Safety checkpoint first: `git add -A && git commit -m "pre-audit checkpoint"` (skip if the tree is clean). Then read `.claude/commands/vault-audit.md` and execute the nightly run. Every removal it makes goes to `_generated/vault-hygiene/audit-trash/` (kept 7 days), so any surprise is recoverable.
 
 Report: `Vault audit: N moved, N merged, N staged, N amendments`
 
