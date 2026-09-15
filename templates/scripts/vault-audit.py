@@ -426,7 +426,32 @@ def apply_row_update(vault, rel, concept, entities, verdict):
 
 # ---------- CLI ----------
 
+# Files that used to live under .claude/ before the 2026-09 relocation.
+_LEGACY_HYGIENE = ["vault-schema.md", "vault-index.json", "audit-log.md", "audit-trash"]
+
+
+def migrate_legacy_hygiene(vault):
+    """One-time move of pre-relocation audit state from .claude/ into
+    _generated/vault-hygiene/. A no-op once migrated (or on a fresh vault with
+    no legacy state), so it is safe to call on every scan. Returns the list of
+    item names moved."""
+    new_dir = os.path.join(vault, HYGIENE_DIR)
+    # If the new location already has a schema, we have already migrated.
+    if os.path.exists(os.path.join(new_dir, "vault-schema.md")):
+        return []
+    moved = []
+    for name in _LEGACY_HYGIENE:
+        src = os.path.join(vault, ".claude", name)
+        dst = os.path.join(new_dir, name)
+        if os.path.exists(src) and not os.path.exists(dst):
+            os.makedirs(new_dir, exist_ok=True)
+            shutil.move(src, dst)
+            moved.append(name)
+    return moved
+
+
 def cmd_scan(args):
+    migrate_legacy_hygiene(args.vault)
     schema = load_schema(args.vault)
     protected = schema.get("protected", [])
     purged = purge_trash(args.vault)
