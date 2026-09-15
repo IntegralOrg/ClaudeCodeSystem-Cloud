@@ -20,7 +20,7 @@ Hard rules:
 0. If `scripts/vault-audit.py` is missing in this vault, copy it from the setup repo's `templates/scripts/` folder first: `cp REPO_PATH/templates/scripts/vault-audit.py VAULT_PATH/scripts/vault-audit.py` (locate `REPO_PATH` the same way `/onboard` does; ask the user if you can't find a local clone of the setup repo).
 1. `date` for today.
 2. `VAULT` = vault root (directory containing CLAUDE.md). `AUDIT="python3 \"$VAULT/scripts/vault-audit.py\""`.
-3. If `_generated/vault-hygiene/vault-schema.md` is missing, stop and run Init instead.
+3. If `_generated/vault-hygiene/vault-schema.md` is missing, check for a legacy `.claude/vault-schema.md` (a vault set up before the 2026-09 relocation). If that exists, run `scan` once first: the script's `migrate_legacy_hygiene` moves the old schema, index, audit log, and staged trash into `_generated/vault-hygiene/`, preserving prior amendments and history. Only if there is no legacy schema either, stop and run Init instead.
 
 ## Step 1: Script pass
 
