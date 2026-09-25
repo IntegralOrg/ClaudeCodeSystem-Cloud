@@ -306,6 +306,8 @@ Considerations for unattended runs:
 
 Most users run `/eod` manually instead; the routine is for making it automatic.
 
+**Local scheduled tasks (Claude Desktop app) are per-machine; back them up.** The Desktop app's Routines page can also run a task locally (kind Local), which is the right choice when the task needs your files or a local tool. A local task lives only on that computer: its prompt is at `~/.claude/scheduled-tasks/<name>/SKILL.md`, and its schedule, folder, model, permission mode, and always-allow approvals sit in the app's private state, which nothing exports; it does not appear in your account's cloud routine list. After creating, editing, pausing, or deleting one, run `bash scripts/local-routines-backup.sh` in the vault and update the task's row in `Resources/Reference/Local Routines Registry.md`. A replacement computer is then rebuilt from the vault, not from memory.
+
 ---
 
 ## Skills: Orchestrating Everything

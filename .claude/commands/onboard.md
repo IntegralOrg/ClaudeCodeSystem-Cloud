@@ -374,6 +374,8 @@ Map the answer: "keep tidy but never rewrite" -> mark that folder `no_merge: tru
 
 Also copy the audit script into the vault: `mkdir -p VAULT_PATH/scripts && cp REPO_PATH/templates/scripts/vault-audit.py VAULT_PATH/scripts/vault-audit.py`.
 
+Also copy the local-routines backup script and registry template: `cp REPO_PATH/templates/scripts/local-routines-backup.sh VAULT_PATH/scripts/local-routines-backup.sh && chmod 755 VAULT_PATH/scripts/local-routines-backup.sh && mkdir -p "VAULT_PATH/Resources/Reference" && cp "REPO_PATH/templates/Local Routines Registry.md" "VAULT_PATH/Resources/Reference/Local Routines Registry.md"`, then set the `created` date in the registry's frontmatter to today. This is the backup for any scheduled task the user later creates as a LOCAL routine in the Claude Desktop app (Guideline "Local routines are backed up in the vault" in CLAUDE.md).
+
 Also create `VAULT_PATH/.gitignore` with at least:
 ```gitignore
 .env

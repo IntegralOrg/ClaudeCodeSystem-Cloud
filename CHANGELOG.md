@@ -6,6 +6,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-09-24] - Local routines are backed up in the vault
+
+A Claude desktop LOCAL scheduled task lives only on the machine that created it (prompt on disk under `~/.claude/scheduled-tasks/`, schedule and approvals in app state that nothing exports, absent from the account's cloud routine list). A crashed or replaced computer lost them silently, and no rule told the agent to back them up.
+
+### Added
+- **`templates/scripts/local-routines-backup.sh`** -- mirrors every local task prompt into `Resources/Reference/Local Routines/<device>/` and prunes mirrors of deleted tasks; macOS and Linux.
+- **`templates/Local Routines Registry.md`** -- the human-maintained half: one row per task with the settings the app does not export (schedule, folder, worktree, model, permissions, the exact always-allow command, deploy script to run first) plus the restore steps for a new computer.
+- **Assistant Guideline "Local routines are backed up in the vault"** in `templates/CLAUDE.md`, a Quick Reference row, and an `/onboard` step (Code and CoWork variants) that copies both files into every new vault.
+
+### Changed
+- `docs/integration-architecture.md` scheduled-automation section explains the local-versus-cloud routine split and the backup rule.
+
+---
+
 ## [2026-08-17] - Add /vault-audit: Nightly Self-Healing Vault Hygiene
 
 `/monthly-review` catches structural drift once a month, after it has already made the vault harder to search. Nothing ran nightly, so a misfiled file or an unmerged duplicate could sit for weeks before the next full pass found it.
