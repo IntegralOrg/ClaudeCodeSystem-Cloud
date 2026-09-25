@@ -84,6 +84,7 @@ If the ClaudeCodeSystem setup repo folder still exists in the workspace outside 
 | Personal projects | `Projects/Personal/` |
 | System updates | Change Log (bottom of this file) + `CHANGELOG.md` for full history |
 | Improvement ideas | `Resources/Reference/System Improvements.md` |
+| Local (per-machine) Claude desktop scheduled tasks: registry + restore on a new computer | `Resources/Reference/Local Routines Registry.md` (settings the app does not export) + `bash scripts/local-routines-backup.sh` (mirrors the prompts). See the "Local routines are backed up" guideline. |
 | Company context | `[YourCompany]/` (Company Profile, Team, Hiring/, SOPs/) |
 | Candidate pipeline | `[YourCompany]/Hiring/Candidate Pipeline.md` + `Candidates/` subfolder |
 | API integration docs | `Resources/Reference/API Integration Guide.md` |
@@ -305,6 +306,7 @@ When working in this vault:
     Do not consider an integration "done" until all of these references are updated. If you add an API and skip the documentation, the next session will not know it exists.
 20. **Graph Navigation**: Always start from `Graph/index.md` or the relevant domain MOC (e.g., `Graph/Clients.md`, `Graph/People.md`, `Graph/Projects.md`, `Graph/Concepts.md`, `Graph/SOPs.md`) when searching for context. Follow wiki-links before resorting to folder browsing or grep. When updating files, maintain inline wiki-links and frontmatter. Consult `Graph/entity-registry.md` for the list of linkable entities. If `Graph/` is empty or MOCs are missing, run `/graph-sync` to populate it.
 21. **Persistence -- commit and push continuously, always to `main`**: The cloud workspace is temporary; Git is the durability layer. Follow the **Git Autopilot** rules (see "About This System"): sync on start, commit and push after every completed unit of work, always land changes on `origin/main` (never a side branch, never a pull request), and resolve any conflict yourself without asking. On a rejected push: `git pull --rebase`, then push again. If pushes keep failing, say so plainly instead of ending the session as if the work were safe. Skills like `/eod`, `/morning`, and `/handoff` have an explicit final push step; the rule applies to ad-hoc work too.
+22. **Local routines are backed up in the vault.** A Claude desktop LOCAL scheduled task (Desktop app, Routines page, kind Local) lives only on the machine that created it: the prompt at `~/.claude/scheduled-tasks/<name>/SKILL.md`, everything else (schedule, folder, model, permission mode, worktree toggle, always-allow approvals) in app state that nothing exports, and it is absent from the account's cloud routine list. Whenever you create, edit, pause, or delete one: run `bash scripts/local-routines-backup.sh` (mirrors the prompts to `Resources/Reference/Local Routines/<device>/`) and update its row in `Resources/Reference/Local Routines Registry.md` in the same session, so a new computer can recreate it exactly. Never hand the user a block to create a local task without also writing the registry row. Cloud routines (kind Remote) need nothing; they belong to the account.
 
 ## Common Workflows
 

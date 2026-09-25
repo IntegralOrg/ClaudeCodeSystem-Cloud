@@ -374,6 +374,8 @@ Map the answer: "keep tidy but never rewrite" -> mark that folder `no_merge: tru
 
 Also copy the audit script into the vault: `mkdir -p VAULT_PATH/scripts && cp REPO_PATH/templates/scripts/vault-audit.py VAULT_PATH/scripts/vault-audit.py`.
 
+Also copy the local-routines backup script and registry template: first `cp REPO_PATH/templates/scripts/local-routines-backup.sh VAULT_PATH/scripts/local-routines-backup.sh && chmod 755 VAULT_PATH/scripts/local-routines-backup.sh && mkdir -p "VAULT_PATH/Resources/Reference"` (stop and report if this fails), then as a SEPARATE command `if [ ! -f "VAULT_PATH/Resources/Reference/Local Routines Registry.md" ]; then cp "REPO_PATH/templates/Local Routines Registry.md" "VAULT_PATH/Resources/Reference/Local Routines Registry.md"; fi`. Keep the two commands separate: chaining the guard onto the install line with `&& ... ||` would run the copy whenever an earlier step failed. The `if [ ! -f ]` guard matters: on a repeat setup of an existing vault the registry already holds hand-recorded task settings that exist nowhere else, so it is never overwritten (the script copy is safe to refresh). When the registry was just created, set the `created` date in its frontmatter to today. This is the backup for any scheduled task the user later creates as a LOCAL routine in the Claude Desktop app (Guideline "Local routines are backed up in the vault" in CLAUDE.md).
+
 Also create `VAULT_PATH/.gitignore` with at least:
 ```gitignore
 .env
