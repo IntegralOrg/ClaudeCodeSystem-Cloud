@@ -16,7 +16,9 @@ summary: "Every Claude desktop LOCAL scheduled task on your machines, with the s
 1. **Prompts (automatic):** `bash scripts/local-routines-backup.sh` mirrors every `SKILL.md` to `Resources/Reference/Local Routines/<device>/<task>.SKILL.md` and removes mirrors of deleted tasks. Run it after creating, editing, pausing, or deleting any local task.
 2. **Settings (by hand, this file):** one row per task below with everything the app does not write to disk. Update the row in the same session as the change.
 
-**Restore on a new computer:** for each row, open Claude Desktop, Code tab, Routines, New routine, Local; paste the mirrored prompt as Instructions; set the fields from the row; click Run now once and choose "always allow" for the listed command(s); then run the backup script on the new machine and update the Device column. Where a deploy script is listed, run it first; it installs the local files the task depends on.
+This file's **State** column is the source of truth for whether a task exists; the prompt mirror is not. When you delete a task in the Desktop app, tick "Also delete files on disk" in the confirmation dialog, otherwise its folder under `~/.claude/scheduled-tasks/` survives and the backup script keeps mirroring a prompt for a task that no longer runs. Set the row to `deleted` either way. If two of your machines normalize to the same device name (for example `work.mac` and `work-mac`), run the script with `LOCAL_ROUTINES_DEVICE=<unique-name>` on one of them so their mirrors do not overwrite each other.
+
+**Restore on a new computer:** for each row, open Claude Desktop, Code tab, Routines, New routine, Local; paste the mirrored prompt's body as Instructions (everything below the closing `---` of the YAML frontmatter; the `name` and `description` lines are metadata, not prompt text); set the fields from the row; click Run now once and choose "always allow" for the listed command(s); then run the backup script on the new machine and update the Device column. Where a deploy script is listed, run it first; it installs the local files the task depends on.
 
 ## Tasks
 
