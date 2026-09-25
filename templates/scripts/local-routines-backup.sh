@@ -47,11 +47,14 @@ n=0; fail=0
 for d in "$SRC"/*/; do
   [ -f "$d/SKILL.md" ] || continue
   name="$(basename "$d")"
-  if cp "$d/SKILL.md" "$DEST/$name.SKILL.md"; then
+  # Copy to a temp file and rename over the mirror, so a failed copy (disk full)
+  # leaves the previous complete mirror in place instead of a truncated one.
+  if cp "$d/SKILL.md" "$DEST/.$name.SKILL.md.tmp" && mv -f "$DEST/.$name.SKILL.md.tmp" "$DEST/$name.SKILL.md"; then
     n=$((n+1))
     echo "backed up: $name -> Resources/Reference/Local Routines/$DEVICE/$name.SKILL.md"
   else
-    echo "ERROR: could not copy $name (disk full, permissions?); the mirror for it may be outdated" >&2
+    rm -f "$DEST/.$name.SKILL.md.tmp"
+    echo "ERROR: could not copy $name (disk full, permissions?); the previous mirror for it is kept" >&2
     fail=1
   fi
 done
