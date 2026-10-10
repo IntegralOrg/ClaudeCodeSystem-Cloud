@@ -31,7 +31,7 @@ Whatever the person's first message says (a greeting, a question, or a pasted br
 
 If the question tool is not available in this session, ask the same three rounds as plain text, one message per round.
 
-Fields: owner name, role, company, company one-liner, tools, week shape (including the planning day), first three jobs, time zone, and the owner's email address (the address End of Day uses to reach the owner when something needs them). Ask once, in one line each, for any of those the brief or the answers did not give.
+Fields: owner name, role, company, company one-liner, tools, week shape (including the planning day), first jobs (every one they picked, in the order they rank them; ask which comes first only if they picked more than one), time zone, and the owner's email address (the address End of Day uses to reach the owner when something needs them). Ask once, in one line each, for any of those the brief or the answers did not give.
 
 ## 2. Build the vault
 

@@ -58,8 +58,9 @@ the brackets and send it as its own message, then wait for the yes:
 > It should take about [N] minutes. While I work, please don't type or move the
 > mouse: anything you do goes into the window I'm working in. If you need your
 > computer back, just start using it; I'll notice at my next check, stop, and
-> tell you where I got to. When I'm done, or if anything goes wrong, I'll bring
-> you back to this window and play a sound. Say yes to start.
+> tell you where I got to with a notification, leaving you where you are. When
+> I'm done, or if anything goes wrong, I'll bring you back to this window and
+> play a sound. Say yes to start.
 
 There is no way around the blackout on any current operating system: a synthetic
 keystroke goes to whatever holds focus, so the agent must hold it. Microsoft is
@@ -97,13 +98,16 @@ not create. Add windows and tabs; never remove ones you found. If a setup genuin
 needs a fresh process, say so and let the user do it.
 
 **8. Every drive ends with `handback`, whatever happened.** Success, a refusal,
-an exit 1, a spent step budget, the user taking the machine back: each one ends
-with `python scripts/screenctl.py handback --text "<one line: done, or where it
+an exit 1, or a spent step budget: each one ends with
+`python scripts/screenctl.py handback --text "<one line: done, or where it
 stopped>"`. It brings the Claude window back to the front (through the operating
 system's own app launcher, so it works even when driving has broken), plays a
 sound, and posts a notification. The person is reading the chat in that window; a
 "done" they cannot see leaves them hanging. If it prints `claude_in_front: NO`,
-the first line of your reply says to switch back to Claude.
+the first line of your reply says to switch back to Claude. **The one exception
+is the person taking the machine back** (a focus check failed because they
+started using another app): end with `handback --quiet --text "<where it
+stopped>"`, which only notifies and leaves their app in front.
 
 **9. Read results from the transcript or the log, not from pixels.** A screenshot
 confirms the UI is in the state you think it is. It is not evidence of what a
@@ -123,8 +127,9 @@ not reproduce, say so: one staged beat puts every real number in doubt.
    habit is worth more than any other for reliability.
 6. **Wait for real completion** with `session_watch.py wait` or a log, never a
    fixed sleep.
-7. **Hand back.** Close only what you opened, run `handback` (rule 8), then say
-   in the chat what state the machine is in and that the blackout is over.
+7. **Hand back.** Close only what you opened, run `handback` (rule 8; `--quiet`
+   if the person took the machine back), then say in the chat what state the
+   machine is in and that the blackout is over.
 
 Prefer keys to clicks throughout. A keyboard shortcut is one deterministic action;
 a click is a coordinate that was true when the screenshot was taken.
@@ -143,7 +148,7 @@ python scripts/screenctl.py <action> [args]
 |---|---|---|
 | `doctor` | `[--out probe.png]` | Binaries, permissions, DPI, clipboard, and a real capture. Names the app macOS grants permissions to. Run first |
 | `request` | | macOS: raises the Accessibility and Screen Recording prompts for the right app and opens the Settings pane. Run while the person is at the keyboard |
-| `handback` | `[--text]` | Brings Claude back to the front, plays a sound, posts a notification. Ends every drive |
+| `handback` | `[--text] [--quiet]` | Brings Claude back to the front, plays a sound, posts a notification. Ends every drive. `--quiet` only notifies, for when the person took the machine back |
 | `list` | | Every visible window as `id<TAB>geometry<TAB>title`, minimized ones flagged |
 | `find` | `--title`\|`--id` | Resolves to one window and prints its geometry, or exits 1 |
 | `focus` | `--title` | Restores, foregrounds, then proves it by window identity |

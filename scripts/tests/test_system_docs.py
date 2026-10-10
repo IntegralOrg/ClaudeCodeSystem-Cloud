@@ -267,7 +267,7 @@ def test_mac_permissions_name_the_claude_code_helper_and_the_hand_back():
 def test_drive_screen_hands_back_and_requests_permissions():
     skill = ROOT / ".claude" / "skills" / "drive-screen"
     text = (skill / "SKILL.md").read_text(encoding="utf-8")
-    has(text, "Every drive ends with `handback`", "you back to this window and play a sound", "Say yes to start",
+    has(text, "Every drive ends with `handback`", "back to this window and", "Say yes to start", "handback --quiet",
         "screenctl.py request", "permissions_belong_to", "Claude Code", "CoreGraphics")
     src = (skill / "scripts" / "screenctl.py").read_text(encoding="utf-8")
     has(src, '"request", "handback"', "def bring_claude_forward", "def notify", "CGPreflightPostEventAccess",

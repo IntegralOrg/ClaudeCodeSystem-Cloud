@@ -25,6 +25,7 @@ time anyone can see that happened, it already has.
   screenctl.py scroll --title "..." --amount -3
   screenctl.py request                      # macOS: raise the permission prompts for the right app
   screenctl.py handback --text "Done: ..."  # bring Claude back to the front and notify
+  screenctl.py handback --quiet --text ".." # notify only (the person took the machine back)
 
 Exit codes: 0 ok, 1 refused (not found / ambiguous / focus unconfirmed / bad input).
 
@@ -1206,12 +1207,14 @@ def act_handback(a) -> None:
     non-zero: the hand-back must not become one more failure to recover from.
     """
     text = a.text or "Done. Your computer is yours again."
-    try:
-        forward = bring_claude_forward()
-    except SystemExit:
-        forward = False
-    except Exception:
-        forward = False
+    forward = False
+    if not a.quiet:   # --quiet: the person took the machine back; leave their app in front
+        try:
+            forward = bring_claude_forward()
+        except SystemExit:
+            forward = False
+        except Exception:
+            forward = False
     try:
         notified = notify("Claude", text)
     except SystemExit:
@@ -1220,7 +1223,10 @@ def act_handback(a) -> None:
         notified = False
     log(f"HANDBACK forward={forward} notified={notified} {text!r}")
     print("HANDED_BACK")
-    print(f"claude_in_front: {'yes' if forward else 'NO - say in the chat that they should switch back to Claude'}")
+    if a.quiet:
+        print("claude_in_front: left alone (--quiet)")
+    else:
+        print(f"claude_in_front: {'yes' if forward else 'NO - say in the chat that they should switch back to Claude'}")
     print(f"notified: {'yes' if notified else 'no'}")
 
 
@@ -1363,6 +1369,9 @@ def main() -> int:
                          "costs several times the tokens to read no better.")
     ap.add_argument("--double", action="store_true")
     ap.add_argument("--right", action="store_true")
+    ap.add_argument("--quiet", action="store_true",
+                    help="handback: notify only, without bringing Claude to the front "
+                         "(for when the person has taken the machine back)")
     ap.add_argument("--keep-clipboard", action="store_true",
                     help="do not restore the user's clipboard after a paste")
     a = ap.parse_args()
