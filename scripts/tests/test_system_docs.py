@@ -274,3 +274,12 @@ def test_drive_screen_hands_back_and_requests_permissions():
         "responsibility_get_pid_responsible_for_pid", "com.anthropic.claudefordesktop")
     ref = (skill / "references" / "driving-agents.md").read_text(encoding="utf-8")
     has(ref, "Claude Code", "Nothing to install")
+
+
+def test_claude_md_carries_the_setup_trigger_for_a_clean_machine():
+    text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    paras = text.split("\n\n")
+    assert "maintaining the template" in paras[1]          # maintainer paragraph stays first
+    trigger = paras[2]
+    has(trigger, "SETUP_PENDING", "System/Setup Procedure.md", "## 0. Where you are",
+        "whatever the first message says", "hooks may not run")
