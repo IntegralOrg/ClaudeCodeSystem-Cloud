@@ -682,7 +682,9 @@ elif OS == "Darwin":
 
     def move_click(x: int, y: int, button: str = "left", double: bool = False) -> None:
         cli = shutil.which("cliclick")
-        if not cli:
+        # cliclick has no right-button double-click; its `dc:` verb is always the
+        # left button, so that combination goes through CoreGraphics instead.
+        if not cli or (double and button == "right"):
             _cg_click(x, y, button, double)
             return
         r = run([cli, f"{'dc' if double else ('rc' if button == 'right' else 'c')}:"
@@ -1263,6 +1265,19 @@ def act_doctor(a) -> None:
     elif OS == "Darwin":
         print(f"permissions_belong_to: {host_app()}   (grant this app, not python)")
         print(f"click: {click_backend()}")
+        try:
+            post = bool(_cg()[0].CGPreflightPostEventAccess())
+        except Exception:
+            post = True   # cannot tell; a refused click still exits NO_ACCESSIBILITY
+        if not post:
+            # Clicks and keystrokes are posted events. Without this grant a click
+            # is refused (or, through cliclick, silently dropped), so it is a
+            # doctor failure even when System Events still answers.
+            print("post_events: DENIED - run `screenctl.py request`, then switch the app "
+                  "above on in System Settings > Privacy & Security > Accessibility")
+            ok = False
+        else:
+            print("post_events: ok")
         try:
             rec = screen_recording_granted()
         except Exception:
