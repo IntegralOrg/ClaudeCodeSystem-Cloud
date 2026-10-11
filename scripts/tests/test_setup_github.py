@@ -153,3 +153,30 @@ def test_connect_can_use_another_name_after_repo_exists(world):
     rc, out = run(world, "connect", "--name", "brain-2")
     assert rc == 0, out
     assert json.loads(world["state"].read_text())["created"] == "brain-2"
+
+
+def _set_origin(w, url):
+    subprocess.run(["git", "-C", str(w["vault"]), "remote", "add", "origin", url], check=True)
+
+
+def test_connect_refuses_an_existing_public_origin(world):
+    _set_origin(world, "https://github.com/pat/open-notes")
+    setstate(world, signed_in=True, repos={"https://github.com/pat/open-notes": {"empty": False, "visibility": "PUBLIC"}})
+    rc, out = run(world, "connect")
+    assert rc == 3 and out.startswith("REPO_NOT_PRIVATE")
+
+
+def test_connect_refuses_an_origin_it_cannot_verify(world):
+    _set_origin(world, "https://github.com/someone-else/brain")
+    setstate(world, signed_in=True)
+    rc, out = run(world, "connect")
+    assert rc == 3 and out.startswith("ORIGIN_UNVERIFIED")
+
+
+def test_connect_rerun_pushes_to_its_own_private_origin(world):
+    bare = world["tmp"] / "remote.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True)
+    _set_origin(world, str(bare))
+    setstate(world, signed_in=True, repos={str(bare): {"empty": False, "visibility": "PRIVATE"}})
+    rc, out = run(world, "connect")
+    assert rc == 0 and out.splitlines()[-1].startswith("CONNECTED"), out

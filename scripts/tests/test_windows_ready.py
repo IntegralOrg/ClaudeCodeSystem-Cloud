@@ -23,3 +23,10 @@ def test_windows_notify_is_a_toast():
     win = src[src.index('if OS == "Windows":'):src.index('elif OS == "Darwin":')]
     assert "ToastNotificationManager" in win and "powershell.exe" in win and "ToastText02" in win
     assert win.count("def notify(") == 1
+
+
+def test_windows_toast_failure_is_not_reported_as_notified():
+    src = (ROOT / ".claude" / "skills" / "drive-screen" / "scripts" / "screenctl.py").read_text(encoding="utf-8")
+    toast = src[src.index("_TOAST = r"):src.index("def notify(", src.index("_TOAST = r"))]
+    assert "$ErrorActionPreference = 'Stop'" in toast
+    assert toast.index("$ErrorActionPreference = 'Stop'") < toast.index(".Show(") < toast.index("Asterisk.Play()")

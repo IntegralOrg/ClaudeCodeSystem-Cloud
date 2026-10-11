@@ -208,8 +208,18 @@ def cmd_connect(a):
         fail("LOGIN_NEEDED", "run login-start first", 3)
     configure_helper(gh)
     login = run([gh, "api", "user", "--jq", ".login"]).stdout.strip()
-    has_origin = git(a.vault, "remote", "get-url", "origin").returncode == 0
-    if not has_origin:
+    origin = git(a.vault, "remote", "get-url", "origin")
+    has_origin = origin.returncode == 0
+    if has_origin:
+        # A rerun reaches the private repository an earlier run created (it has files: that is fine). Anything
+        # else is refused before a single byte is pushed: a public repository would publish the person's notes.
+        url = origin.stdout.strip()
+        view = run([gh, "repo", "view", url, "--json", "visibility"])
+        if view.returncode != 0:
+            fail("ORIGIN_UNVERIFIED", f"could not confirm {url} is this person's private repository", 3)
+        if json.loads(view.stdout or "{}").get("visibility") != "PRIVATE":
+            fail("REPO_NOT_PRIVATE", f"{url} is not private; nothing was pushed", 3)
+    else:
         view = run([gh, "repo", "view", f"{login}/{a.name}", "--json", "isEmpty,visibility"])
         if view.returncode != 0:
             r = run([gh, "repo", "create", a.name, "--private", "--source", a.vault, "--remote", "origin", "--push"],

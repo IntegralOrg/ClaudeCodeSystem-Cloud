@@ -414,7 +414,10 @@ if OS == "Windows":
         # A username like O'Brien puts an apostrophe into %TEMP%.
         return "'" + s.replace("'", "''") + "'"
 
+    # Stop on the first error: PowerShell 5.1 otherwise carries on after a failed Show(), plays the sound, and
+    # exits 0, so the hand-back would report "notified" for a toast that never appeared.
     _TOAST = r"""
+$ErrorActionPreference = 'Stop'
 [Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,ContentType=WindowsRuntime] | Out-Null
 [Windows.Data.Xml.Dom.XmlDocument,Windows.Data.Xml.Dom.XmlDocument,ContentType=WindowsRuntime] | Out-Null
 $x = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent('ToastText02')
