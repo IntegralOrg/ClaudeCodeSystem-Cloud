@@ -25,7 +25,7 @@ Every step below starts with a check and skips itself when the check passes, so 
 - Mac: run `xcode-select --install` and say: "A box just opened: click **Install**, then **Agree**. It takes five to fifteen minutes; we'll talk while it runs." Then wait in the background (`until xcode-select -p >/dev/null 2>&1; do sleep 15; done`, run in the background, up to 45 minutes).
 - Windows (PowerShell): run `winget install --id Git.Git -e --scope user --accept-package-agreements --accept-source-agreements` and `winget install 9PNRBTZXMB4Z --source msstore --accept-package-agreements --accept-source-agreements` (Python 3.13 from the Microsoft Store, which provides `python3`), in the background. If Windows asks "Do you want to allow this app to make changes", tell them to click **Yes**. If `winget` is not found, run `Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe` and retry.
 
-**A3. The questions, while A2 runs.** Check: `_generated/setup/answers.md` exists. Otherwise run section 1 now, during the wait, and write every field to `_generated/setup/answers.md` (one `- field: value` line each), so the answers travel with the move.
+**A3. The questions, while A2 runs.** Check: `_generated/setup/answers.md` exists. Otherwise run section 1 now, during the wait (skip its opening line: A1 already welcomed them), and write every field to `_generated/setup/answers.md` (one `- field: value` line each), so the answers travel with the move.
 
 **A4. Screen permissions (Mac only).** Check, once A2 is done: `python3 .claude/skills/drive-screen/scripts/screenctl.py doctor` prints `DOCTOR_OK`. Otherwise run `python3 .claude/skills/drive-screen/scripts/screenctl.py request` and say: "System Settings just opened. Turn on **Claude Code** in this list, then do the same in Screen Recording. It's listed as Claude Code, not Claude." The grants take effect in the next session, which A6 opens anyway. Windows: nothing to do.
 
@@ -47,12 +47,12 @@ It prints `HOME_READY <folder>` and `OPEN_URL <link>` (or `ALREADY_HOME` on a re
 1. Ask whether they have a GitHub account. If not, open github.com/signup and say: "Make a free account on the page that just opened, and tell me when you're in."
 2. `python3 scripts/setup/github.py install-gh` (prints `GH_READY`).
 3. `python3 scripts/setup/github.py login-start`: it copies a one-time code and opens GitHub; give them its `SAY` sentence exactly. Then run `python3 scripts/setup/github.py login-wait` in the background and wait for `SIGNED_IN`.
-4. `python3 scripts/setup/github.py connect`: it creates the private repository `brain` and saves to it (`CONNECTED`). On `REPO_EXISTS` or `REPO_NOT_PRIVATE`, ask them which repository to use; never push over one that has files.
+4. `python3 scripts/setup/github.py connect`: it creates the private repository `brain` and saves to it (`CONNECTED`). On `REPO_EXISTS` or `REPO_NOT_PRIVATE`, tell them a repository with that name already exists, ask for another name (suggest `brain-2`), and run `python3 scripts/setup/github.py connect --name <that name>`; never push over a repository that has files.
 5. Run the landing script now (`bash scripts/land-local.sh` with the `--final` flag) and confirm the last line of `_generated/landing.log` is "landed on main" or "nothing to push".
 
 **B4. Claude GitHub app.** Open `https://github.com/apps/claude/installations/new` and say: "Choose your account, pick **Only select repositories**, choose **brain**, and click Install." Routines need it to read and save the vault from the cloud. Its proof is the first routine run (a routine stays "not live" until its first run reports).
 
-Then continue with section 1 (skip any field already in `_generated/setup/answers.md`), section 2 (build the vault from the answers), section 3 (routines: in Claude Desktop use the `/schedule` tools when the session has them; otherwise "Create a routine by hand" in `System/Routines.md`, offering to drive the screen through it), and sections 4 to 7. Delete `_generated/setup/answers.md` when you write the completion line.
+Then continue with section 1 (skip its opening line, and skip any field already in `_generated/setup/answers.md`), section 2 (build the vault from the answers), section 3 (routines: in Claude Desktop use the `/schedule` tools when the session has them; otherwise "Create a routine by hand" in `System/Routines.md`, offering to drive the screen through it), and sections 4 to 7. Delete `_generated/setup/answers.md` when you write the completion line.
 
 ## 1. Open, then learn who this is for
 

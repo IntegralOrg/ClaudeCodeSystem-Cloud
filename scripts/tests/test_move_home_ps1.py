@@ -39,3 +39,13 @@ def test_ps1_moves_and_commits(tmp_path):
                        capture_output=True, text=True, env={**os.environ, "USERPROFILE": str(tmp_path / "home")})
     assert p.returncode == 0, p.stdout + p.stderr
     assert "HOME_READY" in p.stdout and (dest / ".gitignore").is_file() and (dest / ".git").is_dir()
+
+
+def test_ps1_has_the_review_fixes():
+    ps = PS1.read_text(encoding="utf-8")
+    assert "[IO.Path]::GetFullPath" in ps and "StartsWith($Src + '\\'" in ps       # absolute, never inside the download
+    i_marker = ps.index("Copy-Item -LiteralPath (Join-Path $Src 'SETUP_PENDING')")
+    i_robo = ps.index("robocopy $Src $Dest")
+    i_head = ps.index("$homeDone")
+    assert i_head < i_marker < i_robo                                               # finished home skipped; marker first
+    assert ps.count("if ($LASTEXITCODE -ne 0) { Stop-With 'GIT_FAILED' 'git config failed' 8 }") == 2

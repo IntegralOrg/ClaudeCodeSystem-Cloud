@@ -11,8 +11,8 @@ This is the **cloud edition**: it starts in [Claude Code on the web](https://cod
 ## Get Started
 You need a Claude Max plan and a free GitHub account (setup helps you make one).
 1. Install [Claude Desktop](https://claude.com/download) and sign in.
-2. [Download your system](https://github.com/IntegralOrg/ClaudeCodeSystem/archive/refs/heads/main.zip). On Windows, right-click the zip in Downloads and choose **Extract All**.
-3. In Claude Desktop open **Code**, choose the downloaded folder (drag it in, or **Select folder**), click **Trust**, and send any message ("hi" is enough). Setup does the rest and asks you only for a few clicks.
+2. [Download your system](https://github.com/IntegralOrg/ClaudeCodeSystem/archive/refs/heads/main.zip). On Windows, right-click the zip in Downloads and choose **Extract All**; Windows makes a folder with a second `ClaudeCodeSystem-main` folder inside it, and that inner one is the folder to choose.
+3. In Claude Desktop open **Code**, choose the `ClaudeCodeSystem-main` folder (the one with `CLAUDE.md` in it; drag it in, or **Select folder**), click **Trust**, and send any message ("hi" is enough). Setup does the rest and asks you only for a few clicks.
 
 No computer handy? Click **Use this template** (private, name it `brain`) and open it at claude.ai/code instead; you can add a computer later (`System/Adding Your Computer.md`).
 Questions: ask your agent. It answers from `System/`.

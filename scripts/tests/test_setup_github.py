@@ -32,11 +32,12 @@ FAKE_GH = textwrap.dedent(r'''
     if a[:2] == ["api", "user"]:
         print("pat"); sys.exit(0)
     if a[:2] == ["repo", "view"]:
-        r = s.get("remote_repo")
+        r = s.get("repos", {}).get(a[2], s.get("remote_repo") if a[2] == "pat/brain" else None)
         if not r: sys.exit(1)
         print(json.dumps({"isEmpty": r["empty"], "visibility": r["visibility"]})); sys.exit(0)
     if a[:2] == ["repo", "create"]:
         bare, src = s["bare"], a[a.index("--source") + 1]   # always act on --source, never on the cwd
+        s["created"] = a[2]; json.dump(s, open(st, "w"))
         subprocess.run(["git", "init", "-q", "--bare", "-b", "main", bare], check=True)
         subprocess.run(["git", "-C", src, "remote", "add", "origin", bare], check=True)
         subprocess.run(["git", "-C", src, "push", "-q", "-u", "origin", "main"], check=True)
@@ -140,3 +141,15 @@ def test_connect_stops_on_public_repo(world):
 def test_verify_unreachable_without_origin(world):
     rc, out = run(world, "verify")
     assert rc == 1 and out.startswith("UNREACHABLE")
+
+
+def test_helper_value_survives_an_apostrophe_in_the_path():
+    assert gh.helper_value("C:\\Users\\O'Brien\\gh.exe") == "!'C:/Users/O'\\''Brien/gh.exe' auth git-credential"
+
+
+def test_connect_can_use_another_name_after_repo_exists(world):
+    setstate(world, signed_in=True, bare=str(world["tmp"] / "remote2.git"),
+             repos={"pat/brain": {"empty": False, "visibility": "PRIVATE"}})
+    rc, out = run(world, "connect", "--name", "brain-2")
+    assert rc == 0, out
+    assert json.loads(world["state"].read_text())["created"] == "brain-2"

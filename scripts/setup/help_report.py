@@ -9,22 +9,41 @@ Stdout: REPORT <path> (or REPORT_UNWRITTEN followed by the report), then SAY <on
 """
 import argparse
 import datetime
+import importlib.util
 import os
 import platform
 import re
 import sys
 
-MASKS = [
+# Patterns the shared masker (scripts/hooks/log_tool_use.py, the one source of truth) does not cover.
+EXTRA_MASKS = [
     (re.compile(r"\b(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}"
                 r"|xox[abpr]-[A-Za-z0-9-]{10,})"), "[masked]"),
-    (re.compile(r"\b([A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*)=\S+"), r"\1=[masked]"),
+    (re.compile(r"\b([A-Za-z][A-Za-z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Za-z0-9_]*\s*[:=]\s*)\S+", re.I),
+     r"\1[masked]"),
 ]
 SAY = ("SAY I wrote down what happened in a note in your Inbox folder. Please send it to your onboarding contact; "
        "it holds no passwords or keys.")
+SAY_UNWRITTEN = ("SAY I could not save the note, so the details are in my message above. Please copy them to your "
+                 "onboarding contact; they hold no passwords or keys.")
+
+
+def _shared_mask():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "hooks", "log_tool_use.py")
+    try:
+        spec = importlib.util.spec_from_file_location("help_report_log_tool_use", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod._mask
+    except Exception:
+        return None
 
 
 def mask(text):
-    for rx, rep in MASKS:
+    shared = _shared_mask()
+    if shared:
+        text = shared(text)
+    for rx, rep in EXTRA_MASKS:
         text = rx.sub(rep, text)
     return text
 
@@ -61,9 +80,10 @@ def main():
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
         print(f"REPORT {path}")
+        print(SAY)
     except OSError:
         print("REPORT_UNWRITTEN here is the report:\n" + text)
-    print(SAY)
+        print(SAY_UNWRITTEN)
     return 0
 
 

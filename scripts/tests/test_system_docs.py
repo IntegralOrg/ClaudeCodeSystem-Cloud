@@ -306,3 +306,11 @@ def test_setup_procedure_routes_and_runs_both_sessions():
 
 def test_adding_your_computer_points_desktop_starters_back():
     has(read("Adding Your Computer"), "If you started on your computer", "already")
+
+
+def test_setup_parts_skip_the_second_welcome_and_can_rename_the_repo():
+    text = read("Setup Procedure")
+    part_a = text[text.index("## Part A"):text.index("## Part B")]
+    part_b = text[text.index("## Part B"):text.index("## 1. Open, then learn")]
+    has(part_a, "skip its opening line")
+    has(part_b, "skip its opening line", "connect --name")

@@ -55,7 +55,8 @@ def asset_name(version, system, machine):
 
 
 def helper_value(gh_path):
-    return "!'" + gh_path.replace("\\", "/") + "' auth git-credential"
+    # Git runs the helper through sh: forward slashes, and an apostrophe (C:/Users/O'Brien) closed and re-opened.
+    return "!'" + gh_path.replace("\\", "/").replace("'", "'\\''") + "' auth git-credential"
 
 
 def bin_dir():
@@ -209,19 +210,20 @@ def cmd_connect(a):
     login = run([gh, "api", "user", "--jq", ".login"]).stdout.strip()
     has_origin = git(a.vault, "remote", "get-url", "origin").returncode == 0
     if not has_origin:
-        view = run([gh, "repo", "view", f"{login}/brain", "--json", "isEmpty,visibility"])
+        view = run([gh, "repo", "view", f"{login}/{a.name}", "--json", "isEmpty,visibility"])
         if view.returncode != 0:
-            r = run([gh, "repo", "create", "brain", "--private", "--source", a.vault, "--remote", "origin", "--push"],
+            r = run([gh, "repo", "create", a.name, "--private", "--source", a.vault, "--remote", "origin", "--push"],
                     cwd=a.vault, timeout=300)
             if r.returncode != 0:
                 fail("PUSH_FAILED", r.stderr.strip()[:300] or "creating the repository failed")
         else:
             info = json.loads(view.stdout or "{}")
             if info.get("visibility") != "PRIVATE":
-                fail("REPO_NOT_PRIVATE", f"github.com/{login}/brain exists and is not private", 3)
+                fail("REPO_NOT_PRIVATE", f"github.com/{login}/{a.name} exists and is not private", 3)
             if not info.get("isEmpty"):
-                fail("REPO_EXISTS", f"github.com/{login}/brain already has files; ask which repository to use", 3)
-            url = os.environ.get("SETUP_REMOTE_URL") or f"https://github.com/{login}/brain.git"
+                fail("REPO_EXISTS", f"github.com/{login}/{a.name} already has files; ask which name to use, "
+                                    "then run connect --name <new name>", 3)
+            url = os.environ.get("SETUP_REMOTE_URL") or f"https://github.com/{login}/{a.name}.git"
             git(a.vault, "remote", "add", "origin", url)
     push = git(a.vault, "push", "-u", "origin", "main", timeout=300)
     if push.returncode != 0:
@@ -249,6 +251,7 @@ def main():
     ap.add_argument("step", choices=["status", "install-gh", "login-start", "login-wait", "connect", "verify"])
     ap.add_argument("--vault", default=os.getcwd())
     ap.add_argument("--timeout", type=float, default=None)
+    ap.add_argument("--name", default="brain", help="connect: the repository name (default brain)")
     a = ap.parse_args()
     a.vault = os.path.abspath(a.vault)
     if a.timeout is None:

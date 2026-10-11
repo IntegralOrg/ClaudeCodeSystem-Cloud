@@ -19,7 +19,17 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$NAME" ] && [ -n "$EMAIL" ] || { echo "USAGE: --name and --email are required"; exit 2; }
+# A quoted ~ or a relative path would otherwise land inside the download (the session's folder) and copy it into itself.
+case "$DEST" in
+  "~") DEST="$HOME" ;;
+  "~/"*) DEST="$HOME/${DEST#\~/}" ;;
+  /*) ;;
+  *) DEST="$HOME/$DEST" ;;
+esac
 DEST="${DEST%/}"
+case "$DEST/" in
+  "$SRC/"?*) echo "USAGE: $DEST is inside the downloaded folder; choose a folder outside it"; exit 2 ;;
+esac
 
 urlencode() {
   local LC_ALL=C s="$1" out="" c i
@@ -58,9 +68,14 @@ if [ ! -f "$DEST/SETUP_PENDING" ]; then
   fi
   mkdir -p "$DEST" || { echo "COPY_FAILED: could not create $DEST"; exit 7; }
 fi
-# SRC/. copies hidden files too; a resumed copy simply rewrites the same bytes.
-cp -R "$SRC/." "$DEST/" || { echo "COPY_FAILED: copying into $DEST failed"; exit 7; }
-command -v xattr >/dev/null 2>&1 && xattr -dr com.apple.quarantine "$DEST" 2>/dev/null
+# The first commit happens only after a full copy, so a home with a commit is finished: never copy over it again
+# (that would undo what Part B changed). Otherwise copy the marker first, so a crash midway can be resumed.
+if ! { [ -d "$DEST/.git" ] && git -C "$DEST" rev-parse -q --verify HEAD >/dev/null 2>&1; }; then
+  cp "$SRC/SETUP_PENDING" "$DEST/SETUP_PENDING" || { echo "COPY_FAILED: copying into $DEST failed"; exit 7; }
+  # SRC/. copies hidden files too; a resumed copy simply rewrites the same bytes.
+  cp -R "$SRC/." "$DEST/" || { echo "COPY_FAILED: copying into $DEST failed"; exit 7; }
+  command -v xattr >/dev/null 2>&1 && xattr -dr com.apple.quarantine "$DEST" 2>/dev/null
+fi
 
 cd "$DEST" || { echo "COPY_FAILED: cannot enter $DEST"; exit 7; }
 if [ ! -d .git ]; then

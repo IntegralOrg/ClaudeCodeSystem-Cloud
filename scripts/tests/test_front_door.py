@@ -20,3 +20,9 @@ def test_readme_get_started_is_three_steps_with_the_cloud_alternative():
     assert "1." in block and "2." in block and "3." in block and "4." not in block
     assert DOWNLOAD in block and "Trust" in block and "Max" in block
     assert "Use this template" in block and "claude.ai/code" in block      # the no-computer path
+
+
+def test_windows_extract_all_names_the_inner_folder():
+    for rel in ("README.md", "docs/index.html"):
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        assert "ClaudeCodeSystem-main" in text and "inside it" in text, rel
