@@ -4,7 +4,7 @@
 Never fails: a report that cannot be written is printed instead, and the exit code is always 0, so the report
 never becomes one more failure. Masks anything that looks like a key or token before it is written or printed.
 
-Usage: help_report.py --step S --error LINE --tried TEXT [--details-file F] [--vault PATH]
+Usage: help_report.py --step S (--error-file F | --error LINE) (--tried-file F | --tried TEXT) [--details-file F] [--vault PATH]
 Stdout: REPORT <path> (or REPORT_UNWRITTEN followed by the report), then SAY <one sentence for the person>.
 """
 import argparse
@@ -59,11 +59,21 @@ def tail(path, limit=3000):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--step", required=True)
-    ap.add_argument("--error", required=True)
-    ap.add_argument("--tried", required=True)
+    # Error text comes from command output, so the agent writes it to a file and passes the path: pasting it into
+    # shell command text would let a `$(...)` in the error run as a command. --error/--tried stay for plain text.
+    err = ap.add_mutually_exclusive_group(required=True)
+    err.add_argument("--error")
+    err.add_argument("--error-file")
+    tried = ap.add_mutually_exclusive_group(required=True)
+    tried.add_argument("--tried")
+    tried.add_argument("--tried-file")
     ap.add_argument("--details-file")
     ap.add_argument("--vault", default=os.getcwd())
     a = ap.parse_args()
+    if a.error_file:
+        a.error = tail(a.error_file).strip() or "(error file empty or unreadable)"
+    if a.tried_file:
+        a.tried = tail(a.tried_file).strip() or "(not recorded)"
     now = datetime.datetime.now()
     details = tail(a.details_file) if a.details_file else ""
     body = mask(
